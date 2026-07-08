@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Image from "next/image";
 import {
   startTransition,
   useEffect,
@@ -8,11 +7,10 @@ import {
   useReducer,
   useRef,
   useState,
-  type RefObject,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import {
   createSamplePdfDocument,
   describeDocumentForChip,
@@ -31,7 +29,6 @@ import {
 } from "@/lib/lookup-source-config";
 import {
   detectLookupLanguage,
-  getLookupSourceIdsForLanguage,
   type LookupLanguage,
 } from "@/lib/lookup-language";
 import {
@@ -67,7 +64,6 @@ import {
   writeLookupToBrowserCache,
 } from "./reader/lookup-cache";
 import {
-  buildEmptySourceMessage,
   buildLoadingPayload,
   buildSectionKey,
   getDefaultSectionKey,
@@ -80,6 +76,13 @@ import {
   getVisibleSections,
   sourceStatusLabel,
 } from "./reader/lookup-display";
+import {
+  buildLookupContext,
+  buildManualEmptyPayload,
+  fetchLookupSourceResult,
+  isInlineSearchSource,
+  seedInlineSourceState,
+} from "./reader/lookup-request";
 import {
   EMPTY_SOURCE_SEARCH_STATE,
   sourceSearchReducer,
@@ -97,44 +100,17 @@ import {
   resolveInitialNotes,
   sanitizeFileStem,
 } from "./reader/notes-export";
+import { NotesPanel } from "./reader/notes-panel";
+import { ReaderDocumentView } from "./reader/reader-document-view";
+import { ReaderSidebar } from "./reader/reader-sidebar";
+import { ReaderToolbar } from "./reader/reader-toolbar";
 import styles from "./pdf-reader-app.module.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const THEME_STORAGE_KEY = "pdf-reader-theme";
 const NOTES_STORAGE_KEY = "mathesis-reader-notes";
-const PDF_EAGER_PAGE_COUNT = 2;
-const PDF_PAGE_ROOT_MARGIN = "700px 0px 900px 0px";
 const READER_SCROLL_PERSIST_INTERVAL_MS = 350;
-const SEARCHABLE_INLINE_SOURCE_IDS = new Set<DictionarySourceId>([
-  "aulete",
-  "priberam",
-  "infopedia",
-  "infopedia_de",
-  "infopedia_dept",
-  "infopedia_en",
-  "infopedia_enpt",
-  "infopedia_es",
-  "infopedia_espt",
-  "infopedia_fr",
-  "infopedia_frpt",
-  "infopedia_it",
-  "infopedia_itpt",
-  "etimologia",
-  "gramatica",
-  "analogico",
-  "mitologico",
-  "wikipedia",
-  "corpus",
-  "johnson",
-  "webster",
-  "wiktionary",
-  "english_analogico",
-  "treccani",
-  "logeion",
-  "faria",
-  "tabelas",
-]);
 
 type ReaderTheme = "day" | "night";
 type AudioRecorderStatus = "idle" | "recording" | "ready" | "transcribing" | "error";
@@ -183,10 +159,6 @@ function sourceTabMarkerClassName(status: DictionarySourceResult["status"]) {
   }
 
   return styles.sourceTabMarkerWarning;
-}
-
-function isInlineSearchSource(sourceId: DictionarySourceId) {
-  return SEARCHABLE_INLINE_SOURCE_IDS.has(sourceId);
 }
 
 function extractSelectionContext(selection: Selection) {
@@ -316,272 +288,6 @@ function getNearestVisiblePdfPage(stage: HTMLElement | null) {
   }
 
   return bestPage;
-}
-
-function buildLookupContext(
-  documentState: ReaderDocument | null,
-  selectionContextText?: string,
-  overrides?: Partial<LookupContext>,
-): LookupContext {
-  return {
-    documentAuthor: overrides?.documentAuthor ?? documentState?.meta.author,
-    documentLanguage: overrides?.documentLanguage ?? documentState?.meta.language,
-    documentLabel: overrides?.documentLabel ?? documentState?.label,
-    selectionContextText: overrides?.selectionContextText ?? selectionContextText,
-    documentTitle: overrides?.documentTitle ?? documentState?.meta.title,
-  };
-}
-
-function buildManualEmptyPayload(language: LookupLanguage): LookupPayload {
-  const context: LookupContext = { documentLanguage: language };
-
-  return {
-    displayWord: "",
-    requestedWord: "",
-    sources: getLookupSourceIdsForLanguage(language).map((sourceId) => {
-      if (language === "latin" && sourceId === "tabelas") {
-        return createLoadingSource("sum", sourceId, context);
-      }
-
-      return createUnavailableSource(
-        "",
-        sourceId,
-        buildEmptySourceMessage(sourceId),
-        context,
-      );
-    }),
-  };
-}
-
-function seedInlineSourceState(payload: LookupPayload, seedWord: string) {
-  const queries: Partial<Record<DictionarySourceId, string>> = {};
-  const results: Partial<Record<DictionarySourceId, DictionarySourceResult>> = {};
-  const loading: Partial<Record<DictionarySourceId, boolean>> = {};
-
-  for (const source of payload.sources) {
-    if (!SEARCHABLE_INLINE_SOURCE_IDS.has(source.sourceId)) {
-      continue;
-    }
-
-    queries[source.sourceId] = seedWord;
-    results[source.sourceId] = source;
-    loading[source.sourceId] = source.status === "loading";
-  }
-
-  return { loading, queries, results };
-}
-
-function getSourceTimeoutMs(sourceId: DictionarySourceId) {
-  if (sourceId === "corpus") {
-    return 60000;
-  }
-
-  if (sourceId === "analogico") {
-    return 25000;
-  }
-
-  if (sourceId === "mitologico") {
-    return 45000;
-  }
-
-  if (sourceId === "wikipedia") {
-    return 15000;
-  }
-
-  if (sourceId === "infopedia") {
-    return 45000;
-  }
-
-  if (sourceId === "imagens") {
-    return 45000;
-  }
-
-  if (sourceId === "etimologia") {
-    return 60000;
-  }
-
-  if (sourceId === "gramatica") {
-    return 60000;
-  }
-
-  return 25000;
-}
-
-async function fetchLookupSourceResult(
-  word: string,
-  sourceId: DictionarySourceId,
-  context: LookupContext,
-  parentSignal: AbortSignal,
-) {
-  const timeoutController = new AbortController();
-  const timeoutId = window.setTimeout(
-    () => timeoutController.abort(),
-    getSourceTimeoutMs(sourceId),
-  );
-  const abortFromParent = () => timeoutController.abort();
-
-  parentSignal.addEventListener("abort", abortFromParent, { once: true });
-
-  try {
-    const shouldSendDocumentContext =
-      sourceId === "corpus" ||
-      sourceId === "etimologia" ||
-      sourceId === "imagens" ||
-      sourceId === "wikipedia" ||
-      sourceId === "johnson" ||
-      sourceId === "webster" ||
-      sourceId === "wiktionary" ||
-      sourceId === "english_analogico" ||
-      sourceId === "infopedia_de" ||
-      sourceId === "infopedia_dept" ||
-      sourceId === "infopedia_en" ||
-      sourceId === "infopedia_enpt" ||
-      sourceId === "infopedia_es" ||
-      sourceId === "infopedia_espt" ||
-      sourceId === "infopedia_fr" ||
-      sourceId === "infopedia_frpt" ||
-      sourceId === "infopedia_it" ||
-      sourceId === "infopedia_itpt" ||
-      sourceId === "treccani" ||
-      sourceId === "gramatica" ||
-      sourceId === "logeion" ||
-      sourceId === "faria" ||
-      sourceId === "porto" ||
-      sourceId === "tabelas" ||
-      sourceId === "mitologico";
-    const response = await fetch(
-      `/api/lookup?${new URLSearchParams({
-        word,
-        source: sourceId,
-        ...(sourceId === "analogico" ? { revision: "analogia-v12" } : {}),
-        ...(sourceId === "mitologico" ? { revision: "grimal-allowed-names-v40" } : {}),
-        ...(shouldSendDocumentContext && context.documentAuthor
-          ? { documentAuthor: context.documentAuthor }
-          : {}),
-        ...(shouldSendDocumentContext && context.documentLanguage
-          ? { documentLanguage: context.documentLanguage }
-          : {}),
-        ...(shouldSendDocumentContext && context.documentLabel
-          ? { documentLabel: context.documentLabel }
-          : {}),
-        ...(shouldSendDocumentContext && context.selectionContextText
-          ? { selectionContextText: context.selectionContextText }
-          : {}),
-        ...(shouldSendDocumentContext && context.documentTitle
-          ? { documentTitle: context.documentTitle }
-          : {}),
-      }).toString()}`,
-      {
-        signal: timeoutController.signal,
-      },
-    );
-
-    const body = (await response.json()) as
-      | DictionarySourceResult
-      | { message?: string };
-
-    if (!response.ok || !("sourceId" in body)) {
-      throw new Error(
-        "message" in body && body.message
-          ? body.message
-          : "Nao consegui consultar esta fonte agora.",
-      );
-    }
-
-    return getDisplaySource(body);
-  } catch (error) {
-    if (parentSignal.aborted) {
-      throw error;
-    }
-
-    if (timeoutController.signal.aborted) {
-      throw new Error("Esta fonte demorou demais nesta consulta; tente de novo em instantes.");
-    }
-
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutId);
-    parentSignal.removeEventListener("abort", abortFromParent);
-  }
-}
-
-function LazyPdfPage({
-  eager = false,
-  pageNumber,
-  rootRef,
-  width,
-}: {
-  eager?: boolean;
-  pageNumber: number;
-  rootRef: RefObject<HTMLElement | null>;
-  width: number;
-}) {
-  const slotRef = useRef<HTMLDivElement | null>(null);
-  const [shouldRender, setShouldRender] = useState(eager);
-  const placeholderHeight = Math.max(420, Math.round(width * 1.42));
-
-  useEffect(() => {
-    if (shouldRender) {
-      return;
-    }
-
-    const slot = slotRef.current;
-
-    if (!slot) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0)) {
-          setShouldRender(true);
-          observer.disconnect();
-        }
-      },
-      {
-        root: rootRef.current,
-        rootMargin: PDF_PAGE_ROOT_MARGIN,
-        threshold: 0.01,
-      },
-    );
-
-    observer.observe(slot);
-    return () => {
-      observer.disconnect();
-    };
-  }, [rootRef, shouldRender]);
-
-  return (
-    <div
-      className={styles.pdfPageSlot}
-      data-pdf-page-number={pageNumber}
-      ref={slotRef}
-      style={{ minHeight: `${placeholderHeight}px` }}
-    >
-      {shouldRender ? (
-        <Page
-          loading={
-            <div
-              className={styles.pdfPagePlaceholder}
-              style={{ minHeight: `${placeholderHeight}px` }}
-            >
-              <span>Carregando página {pageNumber}...</span>
-            </div>
-          }
-          pageNumber={pageNumber}
-          renderAnnotationLayer
-          renderTextLayer
-          width={width}
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className={styles.pdfPagePlaceholder}
-          style={{ minHeight: `${placeholderHeight}px` }}
-        />
-      )}
-    </div>
-  );
 }
 
 export default function PdfReaderApp() {
@@ -2917,162 +2623,32 @@ export default function PdfReaderApp() {
 
   return (
     <section className={styles.workspace}>
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarMeta}>
-          <span className={styles.chip}>
-            {documentState ? documentState.label : "Nenhum arquivo carregado"}
-          </span>
-          <span className={styles.chip}>{documentFormatChip}</span>
-          <span className={styles.chip}>{documentSummaryChip}</span>
-        </div>
-        <div className={styles.toolbarAside}>
-          <p className={styles.toolbarHint}>
-            Abra um arquivo e selecione a palavra que desejar.
-          </p>
-          <div className={styles.toolbarControls}>
-            {canEditDocumentText ? (
-              <button
-                className={styles.themeToggle}
-                onClick={toggleDocumentEditing}
-                type="button"
-              >
-                <span className={styles.themeToggleLabel}>Texto</span>
-                <strong>{isDocumentEditing ? "Salvar edição" : "Editar texto"}</strong>
-              </button>
-            ) : null}
-            <button
-              className={styles.themeToggle}
-              onClick={openManualLookup}
-              type="button"
-            >
-              <span className={styles.themeToggleLabel}>Painel</span>
-              <strong>Abrir popup</strong>
-            </button>
-            <label className={styles.uploadButton}>
-              <span className={styles.themeToggleLabel}>Arquivo</span>
-              <strong>Escolher</strong>
-              <input
-                accept={SUPPORTED_DOCUMENT_ACCEPT}
-                className={styles.hiddenInput}
-                onChange={(event) => ingestFile(event.target.files?.[0] ?? null)}
-                type="file"
-              />
-            </label>
-            <button
-              aria-label={
-                theme === "night" ? "Voltar ao modo claro" : "Ativar modo noturno"
-              }
-              aria-pressed={theme === "night"}
-              className={styles.themeToggle}
-              onClick={() =>
-                setTheme((currentTheme) =>
-                  currentTheme === "night" ? "day" : "night",
-                )
-              }
-              type="button"
-            >
-              <span className={styles.themeToggleLabel}>Tema</span>
-              <strong>{theme === "night" ? "Noturno" : "Claro"}</strong>
-            </button>
-          </div>
-        </div>
-      </div>
+      <ReaderToolbar
+        accept={SUPPORTED_DOCUMENT_ACCEPT}
+        canEditDocumentText={canEditDocumentText}
+        documentFormatChip={documentFormatChip}
+        documentLabel={documentState ? documentState.label : "Nenhum arquivo carregado"}
+        documentSummaryChip={documentSummaryChip}
+        isDocumentEditing={isDocumentEditing}
+        onFileSelected={ingestFile}
+        onOpenManualLookup={openManualLookup}
+        onToggleDocumentEditing={toggleDocumentEditing}
+        onToggleTheme={() =>
+          setTheme((currentTheme) => (currentTheme === "night" ? "day" : "night"))
+        }
+        theme={theme}
+      />
 
       <div className={`${styles.frame} ${isExpanded ? styles.frameExpanded : ""}`}>
         {!isExpanded ? (
-          <aside className={styles.sidebar}>
-            <div className={styles.panel}>
-              <p className={styles.panelLabel}>Seu arquivo</p>
-              <label
-                className={`${styles.dropzone} ${isDragging ? styles.dropzoneActive : ""}`}
-                onDragEnter={() => setIsDragging(true)}
-                onDragLeave={() => setIsDragging(false)}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  setIsDragging(false);
-                  ingestFile(event.dataTransfer.files[0] ?? null);
-                }}
-              >
-                <strong>Arraste um arquivo aqui ou clique para escolher.</strong>
-                <p>
-                  O documento fica no navegador. Este leitor aceita{" "}
-                  {SUPPORTED_DOCUMENT_SUMMARY}. As consultas lexicais,
-                  etimologicas, gramaticais, mitologicas, visuais e de
-                  corpus aparecem so quando voce seleciona uma palavra.
-                </p>
-                <input
-                  accept={SUPPORTED_DOCUMENT_ACCEPT}
-                  className={styles.hiddenInput}
-                  onChange={(event) => ingestFile(event.target.files?.[0] ?? null)}
-                  type="file"
-                />
-              </label>
-              <button
-                className={styles.sampleButton}
-                onClick={loadSamplePdf}
-                type="button"
-              >
-                Abrir PDF de exemplo
-              </button>
-            </div>
-
-            <div className={styles.panel}>
-              <p className={styles.panelLabel}>Formatos e leitura</p>
-              <div className={styles.helperList}>
-                <div className={styles.helperItem}>
-                  <strong>E-books</strong>
-                  <span>
-                    EPUB, MOBI, AZW/AZW3 e FB2 entram como texto selecionavel no
-                    mesmo painel.
-                  </span>
-                </div>
-                <div className={styles.helperItem}>
-                  <strong>Documentos</strong>
-                  <span>
-                    PDF, EPUB, MOBI, AZW3, FB2, DOCX, TXT e HTML entram como
-                    texto selecionável.
-                    <br />
-                    <br />
-                    Depois, basta selecionar uma palavra para que a mágica
-                    aconteça.
-                  </span>
-                </div>
-                <div className={styles.helperItem}>
-                  <strong>Camadas de consulta</strong>
-                  <span>
-                    Aulete, Priberam, Infopédia, Etimologia, Gramática e Analogia
-                    convivem no mesmo popup, com troca lateral.
-                  </span>
-                </div>
-                <div className={styles.helperItem}>
-                  <strong>Mitologia clássica</strong>
-                  <span>
-                    A aba Mitologia consulta uma base mitológica curada e monta
-                    notas de apoio durante a leitura.
-                  </span>
-                </div>
-                <div className={styles.helperItem}>
-                  <strong>Corpus português</strong>
-                  <span>
-                    A aba Corpus agora consulta a antologia local em PDF, separando
-                    poesia e prosa; o Wikisource fica como reserva quando faltar
-                    ocorrência local.
-                  </span>
-                </div>
-                <div className={styles.helperItem}>
-                  <strong>Limites reais</strong>
-                  <span>
-                    KFX e alguns arquivos Kindle com DRM ainda podem falhar no
-                    navegador.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </aside>
+          <ReaderSidebar
+            accept={SUPPORTED_DOCUMENT_ACCEPT}
+            isDragging={isDragging}
+            onDragStateChange={setIsDragging}
+            onFileSelected={ingestFile}
+            onLoadSamplePdf={loadSamplePdf}
+            supportedDocumentSummary={SUPPORTED_DOCUMENT_SUMMARY}
+          />
         ) : null}
 
         <div
@@ -3086,248 +2662,43 @@ export default function PdfReaderApp() {
             </aside>
           ) : null}
 
-          <div
-            className={`${styles.viewerStage} ${
-              !documentState && !documentLoadingLabel ? styles.viewerStageEmpty : ""
-            } ${isDragging ? styles.viewerStageDragging : ""}`}
-            onDragEnter={() => setIsDragging(true)}
-            onDragLeave={() => setIsDragging(false)}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setIsDragging(true);
+          <ReaderDocumentView
+            accept={SUPPORTED_DOCUMENT_ACCEPT}
+            documentEditorValue={documentEditorValue}
+            documentLoadingLabel={documentLoadingLabel}
+            documentState={documentState}
+            isDocumentEditing={isDocumentEditing}
+            isDragging={isDragging}
+            isTocOpen={isTocOpen}
+            numPages={numPages}
+            onDocumentEditorValueChange={setDocumentEditorValue}
+            onDragStateChange={setIsDragging}
+            onFileSelected={ingestFile}
+            onJumpToTocEntry={jumpToTocEntry}
+            onPdfItemClick={(pageNumber) =>
+              scrollToPdfPage(viewerSurfaceRef.current, pageNumber)
+            }
+            onPdfLoadError={setViewerError}
+            onPdfLoadSuccess={(pageCount) => {
+              setNumPages(pageCount);
+              setViewerError(null);
             }}
-            onDrop={(event) => {
-              event.preventDefault();
-              setIsDragging(false);
-              ingestFile(event.dataTransfer.files[0] ?? null);
-            }}
-            ref={viewerSurfaceRef}
-          >
-            {documentLoadingLabel || restoringSession ? (
-              <div className={styles.viewerLoading}>
-                <div>
-                  <strong>Preparando a leitura.</strong>
-                  <p>{documentLoadingLabel ?? "Restaurando seu arquivo anterior."}</p>
-                </div>
-              </div>
-            ) : !documentState ? (
-              <div className={styles.emptyState}>
-                <strong>Solte um arquivo aqui para começar.</strong>
-                <p>
-                  PDF, EPUB, MOBI, AZW3, FB2, DOCX, TXT e HTML entram como texto
-                  selecionável.
-                </p>
-                <p>Depois, basta selecionar uma palavra para que a mágica aconteça.</p>
-                <label className={styles.emptyUploadButton}>
-                  Escolher arquivo
-                  <input
-                    accept={SUPPORTED_DOCUMENT_ACCEPT}
-                    className={styles.hiddenInput}
-                    onChange={(event) => ingestFile(event.target.files?.[0] ?? null)}
-                    type="file"
-                  />
-                </label>
-              </div>
-            ) : documentState.kind === "pdf" ? (
-              <div className={styles.documentArea}>
-                <Document
-                  error={
-                    <div className={styles.viewerError}>
-                      <div>
-                        <strong>Nao consegui abrir esse arquivo PDF.</strong>
-                        <p>
-                          Tente um arquivo com texto selecionavel ou verifique se
-                          ele nao esta protegido.
-                        </p>
-                      </div>
-                    </div>
-                  }
-                  file={documentState.file}
-                  loading={<div className={styles.viewerLoading}>Carregando PDF...</div>}
-                  onItemClick={({ pageNumber }) =>
-                    scrollToPdfPage(viewerSurfaceRef.current, pageNumber)
-                  }
-                  onLoadError={(error) => setViewerError(error.message)}
-                  onLoadSuccess={(pdf) => {
-                    setNumPages(pdf.numPages);
-                    setViewerError(null);
-                  }}
-                >
-                  {Array.from({ length: numPages }, (_, index) => (
-                    <LazyPdfPage
-                      eager={index < PDF_EAGER_PAGE_COUNT}
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      rootRef={viewerSurfaceRef}
-                      width={pageWidth}
-                    />
-                  ))}
-                </Document>
-              </div>
-            ) : (
-              <div className={styles.htmlDocumentShell}>
-                {documentState.meta.title ||
-                documentState.meta.author ||
-                documentState.meta.description ||
-                documentState.meta.coverSrc ? (
-                  <header className={styles.documentMetaCard}>
-                    {documentState.meta.coverSrc ? (
-                      <Image
-                        alt={`Capa de ${documentState.meta.title ?? documentState.label}`}
-                        className={styles.documentCover}
-                        src={documentState.meta.coverSrc}
-                        unoptimized
-                        width={118}
-                        height={170}
-                      />
-                    ) : null}
-
-                    <div className={styles.documentMetaCopy}>
-                      <p className={styles.documentMetaEyebrow}>
-                        {documentState.formatLabel}
-                      </p>
-                      <h2 className={styles.documentMetaTitle}>
-                        {documentState.meta.title ?? documentState.label}
-                      </h2>
-                      {documentState.meta.author ? (
-                        <p className={styles.documentMetaSubtitle}>
-                          {documentState.meta.author}
-                        </p>
-                      ) : null}
-                      {documentState.meta.description ? (
-                        <p className={styles.documentMetaSummary}>
-                          {documentState.meta.description}
-                        </p>
-                      ) : null}
-
-                      <div className={styles.documentMetaList}>
-                        {documentState.meta.language ? (
-                          <span className={styles.documentMetaItem}>
-                            Idioma: {documentState.meta.language}
-                          </span>
-                        ) : null}
-                        {documentState.meta.publisher ? (
-                          <span className={styles.documentMetaItem}>
-                            Editora: {documentState.meta.publisher}
-                          </span>
-                        ) : null}
-                        {documentState.meta.published ? (
-                          <span className={styles.documentMetaItem}>
-                            Data: {documentState.meta.published}
-                          </span>
-                        ) : null}
-                        {documentState.meta.chapterCount ? (
-                          <span className={styles.documentMetaItem}>
-                            Secoes: {documentState.meta.chapterCount}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      {documentState.meta.note ? (
-                        <p className={styles.documentMetaNote}>
-                          {documentState.meta.note}
-                        </p>
-                      ) : null}
-                    </div>
-                  </header>
-                ) : null}
-
-                {documentState.tableOfContents?.length ? (
-                  <section className={styles.documentTocPanel}>
-                    <button
-                      aria-expanded={isTocOpen}
-                      className={styles.documentTocToggle}
-                      onClick={() => setIsTocOpen((current) => !current)}
-                      type="button"
-                    >
-                      <span>Índice</span>
-                      <small>{documentState.tableOfContents.length} entradas</small>
-                    </button>
-
-                    {isTocOpen ? (
-                      <div className={styles.documentTocList}>
-                        {documentState.tableOfContents.map((entry) => (
-                          <button
-                            className={styles.documentTocItem}
-                            key={entry.id}
-                            onClick={() => jumpToTocEntry(entry)}
-                            style={{
-                              paddingLeft: `${12 + Math.min(entry.level, 4) * 14}px`,
-                            }}
-                            type="button"
-                          >
-                            {entry.label}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </section>
-                ) : null}
-
-                {isDocumentEditing ? (
-                  <textarea
-                    aria-label="Editor de texto do documento"
-                    className={styles.documentEditor}
-                    onChange={(event) => setDocumentEditorValue(event.target.value)}
-                    spellCheck={false}
-                    value={documentEditorValue}
-                  />
-                ) : (
-                  <article
-                    className={styles.htmlDocument}
-                    dangerouslySetInnerHTML={{ __html: documentState.html }}
-                  />
-                )}
-              </div>
-            )}
-
-            {viewerError ? (
-              <div className={styles.viewerError}>
-                <div>
-                  <strong>Houve um erro no documento.</strong>
-                  <p>{viewerError}</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
+            onToggleToc={() => setIsTocOpen((current) => !current)}
+            pageWidth={pageWidth}
+            restoringSession={restoringSession}
+            viewerError={viewerError}
+            viewerSurfaceRef={viewerSurfaceRef}
+          />
         </div>
       </div>
 
-      <section className={styles.notesPanel}>
-        <div className={styles.notesHeader}>
-          <h2>Anotações</h2>
-          <div className={styles.notesActions}>
-            <button
-              disabled={!readerNotes.trim()}
-              onClick={exportNotesAsText}
-              type="button"
-            >
-              TXT
-            </button>
-            <button
-              disabled={!readerNotes.trim()}
-              onClick={exportNotesAsDocx}
-              type="button"
-            >
-              DOCX
-            </button>
-            <button
-              disabled={!readerNotes.trim()}
-              onClick={exportNotesAsPdf}
-              type="button"
-            >
-              PDF
-            </button>
-          </div>
-        </div>
-        <textarea
-          aria-label="Anotações de leitura"
-          className={styles.notesTextarea}
-          onChange={(event) => setReaderNotes(event.target.value)}
-          placeholder="Não se preocupe: suas notas ficam salvas aqui."
-          value={readerNotes}
-        />
-      </section>
+      <NotesPanel
+        notes={readerNotes}
+        onChange={setReaderNotes}
+        onExportDocx={exportNotesAsDocx}
+        onExportPdf={exportNotesAsPdf}
+        onExportText={exportNotesAsText}
+      />
 
       {tooltip && !showInspector ? (
         <div
@@ -3347,4 +2718,3 @@ export default function PdfReaderApp() {
     </section>
   );
 }
-
