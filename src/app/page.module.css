@@ -1,0 +1,32 @@
+.page {
+  min-height: 100vh;
+  padding: clamp(12px, 2vw, 24px);
+}
+
+.brandBar {
+  width: min(1720px, 100%);
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.brandBar h1 {
+  font-family: var(--font-literata), serif;
+  font-size: clamp(2.05rem, 3vw, 3.15rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  color: var(--ink-strong);
+}
+
+.shell {
+  width: min(1720px, 100%);
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  .brandBar {
+    margin-bottom: 10px;
+  }
+}

@@ -1,0 +1,23 @@
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
+  <description>
+    <title-info>
+      <book-title>Exemplo FB2</book-title>
+      <author>
+        <first-name>Codex</first-name>
+        <last-name>Reader</last-name>
+      </author>
+      <lang>pt</lang>
+      <annotation><p>Arquivo FB2 simples para validar leitura e selecao.</p></annotation>
+    </title-info>
+  </description>
+  <body>
+    <section id="capitulo-1">
+      <title><p>Capitulo 1</p></title>
+      <p>Este capitulo fala de filosofia e leitura expandida.</p>
+    </section>
+    <section id="capitulo-2">
+      <title><p>Capitulo 2</p></title>
+      <p>Aqui aparece geopolitica para testar o lookup.</p>
+    </section>
+  </body>
+</FictionBook>

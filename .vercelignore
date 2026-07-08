@@ -1,0 +1,8 @@
+.next/
+node_modules/
+work/
+.env*
+*.log
+data/portuguese-corpus-sample/
+data/portuguese-corpus-smoke/
+data/portuguese-corpus/corpus.json

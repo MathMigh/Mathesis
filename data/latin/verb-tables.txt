@@ -1,0 +1,1748 @@
+#
+
+## **1. Coniugationes**
+
+```text
+Coniugatio     Partes principales
+
+Prima          amō, amāre, amāvī, amātum
+Secunda        habeō, habēre, habuī, habitum
+Tertia         dīcō, dīcĕre, dīxī, dictum
+Tertia in -iō  capiō, capĕre, cēpī, captum
+Quarta         audiō, audīre, audīvī, audītum
+```
+
+```text
+Coniugatio     Infinitivum Praesens Activum
+
+Prima          -āre
+Secunda        -ēre
+Tertia         -ĕre
+Tertia in -iō  -ĕre
+Quarta         -īre
+```
+
+A terceira conjugação em **-iō** é uma subdivisão da terceira conjugação.
+
+---
+
+# **2. Themata verbi**
+
+```text
+Verbum    Thema praesentis    Thema perfecti    Thema supini
+
+amō       amā-                 amāv-             amāt-
+habeō     habē-                habu-             habit-
+dīcō      dīcĕ-                dīx-              dict-
+capiō     capi-                cēp-              capt-
+audiō     audī-                audīv-             audīt-
+```
+
+## **Thema praesentis**
+
+```text
+→ systema infecti
+
+Praesens Indicativi Activi et Passivi
+Imperfectum Indicativi Activi et Passivi
+Futurum Indicativi Activi et Passivi
+
+Praesens Subiunctivi Activi et Passivi
+Imperfectum Subiunctivi Activi et Passivi
+
+Imperativus Praesens Activus et Passivus
+Imperativus Futurus Activus et Passivus
+
+Infinitivum Praesens Activum et Passivum
+Participium Praesens Activum
+Gerundium
+Gerundivum
+```
+
+## **Thema perfecti**
+
+```text
+→ systema perfectum activum
+
+Perfectum Indicativi Activi
+Plusquamperfectum Indicativi Activi
+Futurum Perfectum Indicativi Activi
+
+Perfectum Subiunctivi Activi
+Plusquamperfectum Subiunctivi Activi
+
+Infinitivum Perfectum Activum
+```
+
+## **Thema supini**
+
+```text
+Participium Perfectum Passivum
+
+Perfectum Indicativi Passivi
+Plusquamperfectum Indicativi Passivi
+Futurum Perfectum Indicativi Passivi
+
+Perfectum Subiunctivi Passivi
+Plusquamperfectum Subiunctivi Passivi
+
+Infinitivum Perfectum Passivum
+
+Participium Futurum Activum
+Infinitivum Futurum Activum
+Infinitivum Futurum Passivum
+
+Supinum in -um
+Supinum in -ū
+```
+
+---
+
+# **3. Terminationes personales**
+
+## **Systema praesentis — Vox activa**
+
+```text
+                  Singular        Plural
+
+Prima persona     -ō / -m         -mus
+Secunda persona   -s              -tis
+Tertia persona    -t              -nt
+```
+
+## **Systema praesentis — Vox passiva**
+
+```text
+                  Singular        Plural
+
+Prima persona     -or / -r        -mur
+Secunda persona   -ris / -re      -minī
+Tertia persona    -tur            -ntur
+```
+
+## **Perfectum Indicativi Activi**
+
+```text
+                  Singular        Plural
+
+Prima persona     -ī              -imus
+Secunda persona   -istī           -istis
+Tertia persona    -it             -ērunt / -ēre
+```
+
+---
+
+# **4. Formae verbi sum**
+
+## **Indicativus**
+
+### **Praesens**
+
+```text
+sum
+es
+est
+sumus
+estis
+sunt
+```
+
+### **Imperfectum**
+
+```text
+eram
+erās
+erat
+erāmus
+erātis
+erant
+```
+
+### **Futurum**
+
+```text
+erō
+eris
+erit
+erimus
+eritis
+erunt
+```
+
+### **Perfectum**
+
+```text
+fuī
+fuistī
+fuit
+fuimus
+fuistis
+fuērunt / fuēre
+```
+
+### **Plusquamperfectum**
+
+```text
+fueram
+fuerās
+fuerat
+fuerāmus
+fuerātis
+fuerant
+```
+
+### **Futurum Perfectum**
+
+```text
+fuerō
+fueris
+fuerit
+fuerimus
+fueritis
+fuerint
+```
+
+## **Subiunctivus**
+
+### **Praesens**
+
+```text
+sim
+sīs
+sit
+sīmus
+sītis
+sint
+```
+
+### **Imperfectum**
+
+```text
+essem
+essēs
+esset
+essēmus
+essētis
+essent
+```
+
+### **Imperfectum — formae alterae**
+
+```text
+forem
+forēs
+foret
+forēmus
+forētis
+forent
+```
+
+### **Perfectum**
+
+```text
+fuerim
+fuerīs
+fuerit
+fuerīmus
+fuerītis
+fuerint
+```
+
+### **Plusquamperfectum**
+
+```text
+fuissem
+fuissēs
+fuisset
+fuissēmus
+fuissētis
+fuissent
+```
+
+## **Imperativus Praesens**
+
+```text
+                  Singular     Plural
+
+Secunda persona   es           este
+```
+
+## **Imperativus Futurus**
+
+```text
+                  Singular     Plural
+
+Secunda persona   estō         estōte
+Tertia persona    estō         suntō
+```
+
+## **Infinitivi**
+
+```text
+Praesens    esse
+Perfectum   fuisse
+Futurum     futūrum esse / fore
+```
+
+```text
+Concordantia futūrum esse
+
+eum futūrum esse
+eam futūram esse
+eōs futūrōs esse
+eās futūrās esse
+```
+
+**Fore** é invariável.
+
+## **Participium Futurum Activum**
+
+```text
+futūrus, futūra, futūrum
+```
+
+O verbo **sum** não possui gerúndio nem supino e, no latim clássico, não possui particípio regular além de **futūrus, futūra, futūrum**.
+
+---
+
+# **5. Praesens Indicativi**
+
+## **Vox activa**
+
+```text
+Prima
+
+amō, amās, amat,
+amāmus, amātis, amant
+```
+
+```text
+Secunda
+
+habeō, habēs, habet,
+habēmus, habētis, habent
+```
+
+```text
+Tertia
+
+dīcō, dīcis, dīcit,
+dīcimus, dīcitis, dīcunt
+```
+
+```text
+Tertia in -iō
+
+capiō, capis, capit,
+capimus, capitis, capiunt
+```
+
+```text
+Quarta
+
+audiō, audīs, audit,
+audīmus, audītis, audiunt
+```
+
+## **Vox passiva**
+
+```text
+Prima
+
+amor
+amāris / amāre
+amātur
+amāmur
+amāminī
+amantur
+```
+
+```text
+Secunda
+
+habeor
+habēris / habēre
+habētur
+habēmur
+habēminī
+habentur
+```
+
+```text
+Tertia
+
+dīcor
+dīceris / dīcere
+dīcitur
+dīcimur
+dīciminī
+dīcuntur
+```
+
+```text
+Tertia in -iō
+
+capior
+caperis / capere
+capitur
+capimur
+capiminī
+capiuntur
+```
+
+```text
+Quarta
+
+audior
+audīris / audīre
+audītur
+audīmur
+audīminī
+audiuntur
+```
+
+---
+
+# **6. Imperfectum Indicativi**
+
+## **Elementa temporalia**
+
+```text
+Prima et Secunda  -bā-
+Tertia            -ēbā-
+Tertia in -iō     -iēbā-
+Quarta            -iēbā-
+```
+
+## **Vox activa**
+
+```text
+Prima
+
+amābam, amābās, amābat,
+amābāmus, amābātis, amābant
+```
+
+```text
+Secunda
+
+habēbam, habēbās, habēbat,
+habēbāmus, habēbātis, habēbant
+```
+
+```text
+Tertia
+
+dīcēbam, dīcēbās, dīcēbat,
+dīcēbāmus, dīcēbātis, dīcēbant
+```
+
+```text
+Tertia in -iō
+
+capiēbam, capiēbās, capiēbat,
+capiēbāmus, capiēbātis, capiēbant
+```
+
+```text
+Quarta
+
+audiēbam, audiēbās, audiēbat,
+audiēbāmus, audiēbātis, audiēbant
+```
+
+## **Vox passiva**
+
+```text
+Prima
+
+amābar, amābāris / amābāre, amābātur,
+amābāmur, amābāminī, amābantur
+```
+
+```text
+Secunda
+
+habēbar, habēbāris / habēbāre, habēbātur,
+habēbāmur, habēbāminī, habēbantur
+```
+
+```text
+Tertia
+
+dīcēbar, dīcēbāris / dīcēbāre, dīcēbātur,
+dīcēbāmur, dīcēbāminī, dīcēbantur
+```
+
+```text
+Tertia in -iō
+
+capiēbar, capiēbāris / capiēbāre, capiēbātur,
+capiēbāmur, capiēbāminī, capiēbantur
+```
+
+```text
+Quarta
+
+audiēbar, audiēbāris / audiēbāre, audiēbātur,
+audiēbāmur, audiēbāminī, audiēbantur
+```
+
+---
+
+# **7. Futurum Indicativi**
+
+## **Prima et Secunda — Vox activa**
+
+```text
+-bō, -bis, -bit, -bimus, -bitis, -bunt
+```
+
+```text
+Prima
+
+amābō, amābis, amābit,
+amābimus, amābitis, amābunt
+```
+
+```text
+Secunda
+
+habēbō, habēbis, habēbit,
+habēbimus, habēbitis, habēbunt
+```
+
+## **Prima et Secunda — Vox passiva**
+
+```text
+-bor, -beris / -bere, -bitur,
+-bimur, -biminī, -buntur
+```
+
+```text
+Prima
+
+amābor, amāberis / amābere, amābitur,
+amābimur, amābiminī, amābuntur
+```
+
+```text
+Secunda
+
+habēbor, habēberis / habēbere, habēbitur,
+habēbimur, habēbiminī, habēbuntur
+```
+
+## **Tertia, Tertia in -iō et Quarta — Vox activa**
+
+```text
+-am, -ēs, -et, -ēmus, -ētis, -ent
+```
+
+```text
+Tertia
+
+dīcam, dīcēs, dīcet,
+dīcēmus, dīcētis, dīcent
+```
+
+```text
+Tertia in -iō
+
+capiam, capiēs, capiet,
+capiēmus, capiētis, capient
+```
+
+```text
+Quarta
+
+audiam, audiēs, audiet,
+audiēmus, audiētis, audient
+```
+
+## **Tertia, Tertia in -iō et Quarta — Vox passiva**
+
+```text
+Tertia
+
+dīcar, dīcēris / dīcēre, dīcētur,
+dīcēmur, dīcēminī, dīcentur
+```
+
+```text
+Tertia in -iō
+
+capiar, capiēris / capiēre, capiētur,
+capiēmur, capiēminī, capientur
+```
+
+```text
+Quarta
+
+audiar, audiēris / audiēre, audiētur,
+audiēmur, audiēminī, audientur
+```
+
+---
+
+# **8. Systema perfectum activum — Indicativus**
+
+## **Perfectum Indicativi Activi**
+
+```text
+Thema perfecti +
+
+-ī
+-istī
+-it
+-imus
+-istis
+-ērunt / -ēre
+```
+
+```text
+amāvī
+amāvistī
+amāvit
+amāvimus
+amāvistis
+amāvērunt / amāvēre
+```
+
+```text
+habuī
+dīxī
+cēpī
+audīvī
+```
+
+## **Plusquamperfectum Indicativi Activi**
+
+```text
+Thema perfecti +
+
+-eram
+-erās
+-erat
+-erāmus
+-erātis
+-erant
+```
+
+```text
+amāveram
+amāverās
+amāverat
+amāverāmus
+amāverātis
+amāverant
+```
+
+## **Futurum Perfectum Indicativi Activi**
+
+```text
+Thema perfecti +
+
+-erō
+-eris
+-erit
+-erimus
+-eritis
+-erint
+```
+
+```text
+amāverō
+amāveris
+amāverit
+amāverimus
+amāveritis
+amāverint
+```
+
+Na escrita sem indicação da quantidade vocálica, todas as formas, exceto a primeira pessoa singular, podem parecer idênticas às do **Perfectum Subiunctivi Activi**.
+
+Na convenção adotada neste quadro:
+
+```text
+Futurum Perfectum Indicativi     Perfectum Subiunctivi
+
+amāverō                          amāverim
+amāveris                         amāverīs
+amāverit                         amāverit
+amāverimus                       amāverīmus
+amāveritis                       amāverītis
+amāverint                        amāverint
+```
+
+A terceira pessoa singular e a terceira pessoa plural são plenamente idênticas.
+
+---
+
+# **9. Systema perfectum passivum — Indicativus**
+
+## **Formulae**
+
+```text
+Perfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Praesens Indicativi de sum
+```
+
+```text
+Plusquamperfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Imperfectum Indicativi de sum
+```
+
+```text
+Futurum Perfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Futurum Indicativi de sum
+```
+
+## **Perfectum Indicativi Passivi**
+
+```text
+Masculinum
+
+amātus sum
+amātus es
+amātus est
+amātī sumus
+amātī estis
+amātī sunt
+```
+
+```text
+Femininum
+
+amāta sum
+amāta es
+amāta est
+amātae sumus
+amātae estis
+amātae sunt
+```
+
+```text
+Neutrum — tertia persona
+
+Singular    amātum est
+Plural      amāta sunt
+```
+
+## **Plusquamperfectum Indicativi Passivi**
+
+```text
+Masculinum
+
+amātus eram
+amātus erās
+amātus erat
+amātī erāmus
+amātī erātis
+amātī erant
+```
+
+```text
+Femininum
+
+amāta eram
+amāta erās
+amāta erat
+amātae erāmus
+amātae erātis
+amātae erant
+```
+
+```text
+Neutrum — tertia persona
+
+Singular    amātum erat
+Plural      amāta erant
+```
+
+## **Futurum Perfectum Indicativi Passivi**
+
+```text
+Masculinum
+
+amātus erō
+amātus eris
+amātus erit
+amātī erimus
+amātī eritis
+amātī erunt
+```
+
+```text
+Femininum
+
+amāta erō
+amāta eris
+amāta erit
+amātae erimus
+amātae eritis
+amātae erunt
+```
+
+```text
+Neutrum — tertia persona
+
+Singular    amātum erit
+Plural      amāta erunt
+```
+
+---
+
+# **10. Praesens Subiunctivi**
+
+## **Vocales modales**
+
+```text
+Prima          ē
+Secunda        eā
+Tertia         ā
+Tertia in -iō  iā
+Quarta         iā
+```
+
+## **Vox activa**
+
+```text
+Prima
+
+amem, amēs, amet,
+amēmus, amētis, ament
+```
+
+```text
+Secunda
+
+habeam, habeās, habeat,
+habeāmus, habeātis, habeant
+```
+
+```text
+Tertia
+
+dīcam, dīcās, dīcat,
+dīcāmus, dīcātis, dīcant
+```
+
+```text
+Tertia in -iō
+
+capiam, capiās, capiat,
+capiāmus, capiātis, capiant
+```
+
+```text
+Quarta
+
+audiam, audiās, audiat,
+audiāmus, audiātis, audiant
+```
+
+## **Vox passiva**
+
+```text
+Prima
+
+amer, amēris / amēre, amētur,
+amēmur, amēminī, amentur
+```
+
+```text
+Secunda
+
+habear, habeāris / habeāre, habeātur,
+habeāmur, habeāminī, habeantur
+```
+
+```text
+Tertia
+
+dīcar, dīcāris / dīcāre, dīcātur,
+dīcāmur, dīcāminī, dīcantur
+```
+
+```text
+Tertia in -iō
+
+capiar, capiāris / capiāre, capiātur,
+capiāmur, capiāminī, capiantur
+```
+
+```text
+Quarta
+
+audiar, audiāris / audiāre, audiātur,
+audiāmur, audiāminī, audiantur
+```
+
+---
+
+# **11. Imperfectum Subiunctivi**
+
+## **Formula**
+
+```text
+Infinitivum Praesens Activum
++ terminationes personales
+```
+
+## **Vox activa**
+
+```text
+Prima
+
+amārem, amārēs, amāret,
+amārēmus, amārētis, amārent
+```
+
+```text
+Secunda
+
+habērem, habērēs, habēret,
+habērēmus, habērētis, habērent
+```
+
+```text
+Tertia
+
+dīcerem, dīcerēs, dīceret,
+dīcerēmus, dīcerētis, dīcerent
+```
+
+```text
+Tertia in -iō
+
+caperem, caperēs, caperet,
+caperēmus, caperētis, caperent
+```
+
+```text
+Quarta
+
+audīrem, audīrēs, audīret,
+audīrēmus, audīrētis, audīrent
+```
+
+## **Vox passiva**
+
+```text
+Prima
+
+amārer, amārēris / amārēre, amārētur,
+amārēmur, amārēminī, amārentur
+```
+
+```text
+Secunda
+
+habērer, habērēris / habērēre, habērētur,
+habērēmur, habērēminī, habērentur
+```
+
+```text
+Tertia
+
+dīcerer, dīcerēris / dīcerēre, dīcerētur,
+dīcerēmur, dīcerēminī, dīcerentur
+```
+
+```text
+Tertia in -iō
+
+caperer, caperēris / caperēre, caperētur,
+caperēmur, caperēminī, caperentur
+```
+
+```text
+Quarta
+
+audīrer, audīrēris / audīrēre, audīrētur,
+audīrēmur, audīrēminī, audīrentur
+```
+
+---
+
+# **12. Perfectum Subiunctivi**
+
+## **Vox activa**
+
+```text
+Thema perfecti +
+
+-erim
+-erīs
+-erit
+-erīmus
+-erītis
+-erint
+```
+
+```text
+amāverim
+amāverīs
+amāverit
+amāverīmus
+amāverītis
+amāverint
+```
+
+## **Vox passiva**
+
+```text
+Participium Perfectum Passivum
++ Praesens Subiunctivi de sum
+```
+
+```text
+Masculinum
+
+amātus sim
+amātus sīs
+amātus sit
+amātī sīmus
+amātī sītis
+amātī sint
+```
+
+```text
+Femininum
+
+amāta sim
+amāta sīs
+amāta sit
+amātae sīmus
+amātae sītis
+amātae sint
+```
+
+```text
+Neutrum — tertia persona
+
+Singular    amātum sit
+Plural      amāta sint
+```
+
+---
+
+# **13. Plusquamperfectum Subiunctivi**
+
+## **Vox activa**
+
+```text
+Infinitivum Perfectum Activum
++ terminationes personales
+```
+
+```text
+amāvissem
+amāvissēs
+amāvisset
+amāvissēmus
+amāvissētis
+amāvissent
+```
+
+## **Vox passiva**
+
+```text
+Participium Perfectum Passivum
++ Imperfectum Subiunctivi de sum
+```
+
+```text
+Masculinum
+
+amātus essem
+amātus essēs
+amātus esset
+amātī essēmus
+amātī essētis
+amātī essent
+```
+
+```text
+Femininum
+
+amāta essem
+amāta essēs
+amāta esset
+amātae essēmus
+amātae essētis
+amātae essent
+```
+
+```text
+Neutrum — tertia persona
+
+Singular    amātum esset
+Plural      amāta essent
+```
+
+---
+
+# **14. Imperativus Praesens**
+
+## **Vox activa**
+
+```text
+Coniugatio     Singular     Plural
+
+Prima          amā          amāte
+Secunda        habē         habēte
+Tertia         lege         legite
+Tertia in -iō  cape         capite
+Quarta         audī         audīte
+```
+
+## **Formae singulares exceptionales**
+
+```text
+Singular    Plural
+
+dīc         dīcite
+dūc         dūcite
+fac         facite
+fer         ferte
+```
+
+## **Vox passiva et deponens**
+
+```text
+Coniugatio     Singular     Plural
+
+Prima          amāre        amāminī
+Secunda        habēre       habēminī
+Tertia         legere       legiminī
+Tertia in -iō  capere       capiminī
+Quarta         audīre       audīminī
+```
+
+---
+
+# **15. Imperativus Futurus**
+
+## **Vox activa**
+
+```text
+                  Singular       Plural
+
+Secunda persona   -tō            -tōte
+Tertia persona    -tō            -ntō
+```
+
+```text
+Coniugatio     2.ª sg.    3.ª sg.    2.ª pl.     3.ª pl.
+
+Prima          amātō      amātō      amātōte     amantō
+Secunda        habētō     habētō     habētōte    habentō
+Tertia         dīcitō     dīcitō     dīcitōte    dīcuntō
+Tertia in -iō  capitō     capitō     capitōte    capiuntō
+Quarta         audītō     audītō     audītōte    audiuntō
+```
+
+## **Vox passiva**
+
+```text
+                  Singular       Plural
+
+Secunda persona   -tor            —
+Tertia persona    -tor           -ntor
+```
+
+```text
+Coniugatio     2.ª sg.    3.ª sg.    3.ª pl.
+
+Prima          amātor     amātor     amantor
+Secunda        habētor    habētor    habentor
+Tertia         dīcitor    dīcitor    dīcuntor
+Tertia in -iō  capitor    capitor    capiuntor
+Quarta         audītor    audītor    audiuntor
+```
+
+---
+
+# **16. Infinitivi**
+
+## **Tabula generalis**
+
+```text
+Verbum    Vox       Praesens       Perfectum        Futurum
+
+amō       Activa    amāre          amāvisse         amātūrum esse
+          Passiva   amārī          amātum esse      amātum īrī
+
+habeō     Activa    habēre         habuisse         habitūrum esse
+          Passiva   habērī         habitum esse     habitum īrī
+
+dīcō      Activa    dīcĕre         dīxisse          dictūrum esse
+          Passiva   dīcī           dictum esse      dictum īrī
+
+capiō     Activa    capĕre         cēpisse          captūrum esse
+          Passiva   capī           captum esse      captum īrī
+
+audiō     Activa    audīre         audīvisse        audītūrum esse
+          Passiva   audīrī         audītum esse     audītum īrī
+```
+
+## **Infinitivum Futurum Passivum — forma altera**
+
+```text
+Participium Perfectum Passivum + fore
+
+amātum fore
+habitum fore
+dictum fore
+captum fore
+audītum fore
+```
+
+## **Concordantia infinitivorum compositorum**
+
+Neste quadro, as formas **amātum esse**, **amātūrum esse** e **amātum fore** são apresentadas convencionalmente no acusativo masculino singular; a terminação **-um** coincide formalmente com o nominativo e o acusativo neutro singular.
+
+```text
+Infinitivum Perfectum Passivum
+
+eum amātum esse
+eam amātam esse
+eōs amātōs esse
+eās amātās esse
+```
+
+```text
+Infinitivum Futurum Activum
+
+eum amātūrum esse
+eam amātūram esse
+eōs amātūrōs esse
+eās amātūrās esse
+```
+
+```text
+Infinitivum Futurum Passivum cum fore
+
+eum amātum fore
+eam amātam fore
+eōs amātōs fore
+eās amātās fore
+```
+
+No infinitivo futuro passivo com **īrī**, o supino permanece invariável:
+
+```text
+eum amātum īrī
+eam amātum īrī
+eōs amātum īrī
+eās amātum īrī
+```
+
+---
+
+# **17. Participia**
+
+## **Participium Praesens Activum**
+
+```text
+amāns, amantis
+habēns, habentis
+dīcēns, dīcentis
+capiēns, capientis
+audiēns, audientis
+```
+
+## **Participium Perfectum Passivum**
+
+```text
+amātus, amāta, amātum
+habitus, habita, habitum
+dictus, dicta, dictum
+captus, capta, captum
+audītus, audīta, audītum
+```
+
+## **Participium Futurum Activum**
+
+```text
+amātūrus, amātūra, amātūrum
+habitūrus, habitūra, habitūrum
+dictūrus, dictūra, dictūrum
+captūrus, captūra, captūrum
+audītūrus, audītūra, audītūrum
+```
+
+## **Gerundivum**
+
+```text
+amandus, amanda, amandum
+habendus, habenda, habendum
+dīcendus, dīcenda, dīcendum
+capiendus, capienda, capiendum
+audiendus, audienda, audiendum
+```
+
+---
+
+# **18. Gerundium**
+
+```text
+Coniugatio     Genitivus     Dativus      Accusativus     Ablativus
+
+Prima          amandī        amandō       amandum         amandō
+Secunda        habendī       habendō      habendum         habendō
+Tertia         dīcendī       dīcendō      dīcendum         dīcendō
+Tertia in -iō  capiendī      capiendō     capiendum        capiendō
+Quarta         audiendī      audiendō     audiendum        audiendō
+```
+
+O gerúndio é um substantivo verbal neutro singular e ocorre apenas nos casos oblíquos. Seu dativo existe, mas é relativamente raro.
+
+O acusativo é empregado normalmente com **ad** para indicar finalidade:
+
+```text
+ad amandum
+ad discendum
+ad audiendum
+```
+
+O infinitivo exerce a função correspondente ao nominativo:
+
+```text
+amāre bonum est
+```
+
+---
+
+# **19. Supinum**
+
+```text
+Verbum    Supinum in -um    Supinum in -ū
+
+amō       amātum            amātū
+habeō     habitum           habitū
+dīcō      dictum            dictū
+capiō     captum            captū
+audiō     audītum           audītū
+```
+
+## **Supinum in -um**
+
+```text
+vēnit rogātum
+```
+
+## **Supinum in -ū**
+
+```text
+mīrābile dictū
+facile factū
+```
+
+O supino em **-ū** é raro e aparece sobretudo com certos adjetivos de facilidade, dificuldade, agrado, desagrado ou avaliação.
+
+---
+
+# **20. Coniugationes periphrasticae**
+
+## **Periphrastica activa**
+
+```text
+Participium Futurum Activum
++ forma apropriada de sum
+```
+
+```text
+amātūrus sum
+amātūrus eram
+amātūrus erō
+amātūrus fuī
+amātūrus sim
+amātūrus essem
+```
+
+## **Periphrastica passiva**
+
+```text
+Gerundivum
++ forma apropriada de sum
+```
+
+```text
+amandus sum
+amandus eram
+amandus erō
+amandus fuī
+amandus sim
+amandus essem
+```
+
+```text
+liber legendus est
+epistula legenda est
+verba legenda sunt
+```
+
+```text
+Agens in dativo
+
+liber mihi legendus est
+```
+
+```text
+Constructio impersonalis
+
+nōbīs eundum est
+```
+
+---
+
+# **21. Verba deponentia**
+
+```text
+loquor, loquī, locūtus sum
+sequor, sequī, secūtus sum
+hortor, hortārī, hortātus sum
+proficīscor, proficīscī, profectus sum
+```
+
+## **Systema praesentis**
+
+```text
+loquor
+loqueris
+loquitur
+loquimur
+loquiminī
+loquuntur
+```
+
+```text
+Imperfectum      loquēbar
+Futurum          loquar
+Infinitivum      loquī
+Imperativus sg.  loquere
+Imperativus pl.  loquiminī
+```
+
+## **Systema perfectum**
+
+```text
+Perfectum Indicativi             locūtus sum
+Plusquamperfectum Indicativi     locūtus eram
+Futurum Perfectum Indicativi     locūtus erō
+
+Perfectum Subiunctivi            locūtus sim
+Plusquamperfectum Subiunctivi    locūtus essem
+
+Infinitivum Perfectum            locūtum esse
+```
+
+```text
+In oratione infinitiva
+
+eum locūtum esse
+```
+
+```text
+Forma citationis
+
+locūtus esse
+```
+
+---
+
+# **22. Verba semideponentia**
+
+```text
+audeō, audēre, ausus sum
+gaudeō, gaudēre, gāvīsus sum
+fīdō, fīdĕre, fīsus sum
+soleō, solēre, solitus sum
+```
+
+```text
+Systema praesentis    forma activa
+Systema perfectum     forma deponens
+```
+
+## **Exemplum: audeō**
+
+```text
+Praesens Indicativi               audeō
+Imperfectum Indicativi            audēbam
+Futurum Indicativi                audēbō
+
+Perfectum Indicativi              ausus sum
+Plusquamperfectum Indicativi      ausus eram
+Futurum Perfectum Indicativi      ausus erō
+
+Perfectum Subiunctivi             ausus sim
+Plusquamperfectum Subiunctivi     ausus essem
+
+Infinitivum Perfectum             ausum esse
+```
+
+```text
+In oratione infinitiva
+
+eum ausum esse
+```
+
+```text
+Forma citationis
+
+ausus esse
+```
+
+---
+
+# **23. Formulae systematis perfecti passivi**
+
+```text
+Formula generalis
+
+Participium Perfectum Passivum
++ forma apropriada de sum
+```
+
+```text
+Perfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Praesens Indicativi de sum
+```
+
+```text
+Plusquamperfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Imperfectum Indicativi de sum
+```
+
+```text
+Futurum Perfectum Indicativi Passivi
+
+Participium Perfectum Passivum
++ Futurum Indicativi de sum
+```
+
+```text
+Perfectum Subiunctivi Passivi
+
+Participium Perfectum Passivum
++ Praesens Subiunctivi de sum
+```
+
+```text
+Plusquamperfectum Subiunctivi Passivi
+
+Participium Perfectum Passivum
++ Imperfectum Subiunctivi de sum
+```
+
+---
+
+# **24. Formulae fundamentales**
+
+```text
+Praesens Indicativi
+
+Thema praesentis
++ terminationes personales
+```
+
+```text
+Imperfectum Indicativi
+
+Thema praesentis
++ elementum imperfecti
++ terminationes personales
+```
+
+```text
+Futurum — Prima et Secunda
+
+Thema praesentis
++ -b-
++ terminationes
+```
+
+```text
+Futurum — Tertia, Tertia in -iō et Quarta
+
+Thema praesentis
++ -a- / -ē-
++ terminationes
+```
+
+As fórmulas com o tema do presente são esquemáticas. A vogal temática pode sofrer alteração, contração, abreviamento ou desaparecimento, especialmente na terceira conjugação:
+
+```text
+Thema praesentis: dīcĕ-
+
+dīcō
+dīcis
+dīcit
+dīcimus
+dīcitis
+dīcunt
+
+dīcam
+dīcēs
+dīcent
+```
+
+```text
+Perfectum Indicativi Activi
+
+Thema perfecti
++ -ī, -istī, -it, -imus, -istis, -ērunt / -ēre
+```
+
+```text
+Plusquamperfectum Indicativi Activi
+
+Thema perfecti
++ -eram, -erās, -erat, -erāmus, -erātis, -erant
+```
+
+```text
+Futurum Perfectum Indicativi Activi
+
+Thema perfecti
++ -erō, -eris, -erit, -erimus, -eritis, -erint
+```
+
+```text
+Perfectum Subiunctivi Activi
+
+Thema perfecti
++ -erim, -erīs, -erit, -erīmus, -erītis, -erint
+```
+
+```text
+Plusquamperfectum Subiunctivi Activi
+
+Infinitivum Perfectum Activum
++ terminationes personales
+```
+
+```text
+Infinitivum Perfectum Activum
+
+Thema perfecti
++ -isse
+```
+
+```text
+Infinitivum Perfectum Passivum
+
+Participium Perfectum Passivum
++ esse
+```
+
+```text
+Infinitivum Futurum Activum
+
+Participium Futurum Activum
++ esse
+```
+
+```text
+Infinitivum Futurum Passivum
+
+Supinum in -um
++ īrī
+```
+
+```text
+Forma altera Infinitivi Futuri Passivi
+
+Participium Perfectum Passivum
++ fore
+```
+
+```text
+Periphrastica activa
+
+Participium Futurum Activum
++ forma apropriada de sum
+```
+
+```text
+Periphrastica passiva
+
+Gerundivum
++ forma apropriada de sum
+```
+
+---
+
+# **25. Tabula trium thematum**
+
+```text
+THEMA PRAESENTIS
+
+→ systema infecti
+
+→ Praesens Indicativi Activi et Passivi
+→ Imperfectum Indicativi Activi et Passivi
+→ Futurum Indicativi Activi et Passivi
+
+→ Praesens Subiunctivi Activi et Passivi
+→ Imperfectum Subiunctivi Activi et Passivi
+
+→ Imperativus Praesens Activus et Passivus
+→ Imperativus Futurus Activus et Passivus
+
+→ Infinitivum Praesens Activum et Passivum
+→ Participium Praesens Activum
+→ Gerundium
+→ Gerundivum
+```
+
+```text
+THEMA PERFECTI
+
+→ systema perfectum activum
+
+→ Perfectum Indicativi Activi
+→ Plusquamperfectum Indicativi Activi
+→ Futurum Perfectum Indicativi Activi
+
+→ Perfectum Subiunctivi Activi
+→ Plusquamperfectum Subiunctivi Activi
+
+→ Infinitivum Perfectum Activum
+```
+
+```text
+THEMA SUPINI
+
+→ Participium Perfectum Passivum
+
+→ Perfectum Indicativi Passivi
+→ Plusquamperfectum Indicativi Passivi
+→ Futurum Perfectum Indicativi Passivi
+
+→ Perfectum Subiunctivi Passivi
+→ Plusquamperfectum Subiunctivi Passivi
+
+→ Infinitivum Perfectum Passivum
+
+→ Participium Futurum Activum
+→ Infinitivum Futurum Activum
+→ Infinitivum Futurum Passivum
+
+→ Supinum in -um
+→ Supinum in -ū
+```
