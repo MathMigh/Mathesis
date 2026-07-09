@@ -983,13 +983,26 @@ export default function PdfReaderApp() {
         });
       };
 
-      await fetchSourceBatch(prioritySourceIds);
+      const priorityBatch = fetchSourceBatch(prioritySourceIds);
+
+      await Promise.race([
+        priorityBatch,
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 900);
+        }),
+      ]);
 
       if (controller.signal.aborted) {
         return;
       }
 
       if (deferredSourceIds.length === 0) {
+        await priorityBatch;
+
+        if (controller.signal.aborted) {
+          return;
+        }
+
         finalizeTooltipPayload("ready");
         return;
       }
@@ -997,7 +1010,10 @@ export default function PdfReaderApp() {
       finalizeTooltipPayload("loading");
 
       void (async () => {
-        await fetchSourceBatch(deferredSourceIds);
+        await Promise.allSettled([
+          priorityBatch,
+          fetchSourceBatch(deferredSourceIds),
+        ]);
 
         if (controller.signal.aborted) {
           return;
@@ -1712,64 +1728,61 @@ export default function PdfReaderApp() {
           return next;
         });
 
-        try {
-          const context = {
-            ...buildLookupContext(documentState, undefined, tooltip?.contextOverrides),
-            documentLanguage: panelLookupLanguage,
-          };
-          const results = await Promise.all(
-            searchableSources.map(async (source) => {
-              try {
-                return await fetchLookupSourceResult(
-                  trimmedQuery,
-                  source.sourceId,
-                  context,
-                  controller.signal,
-                );
-              } catch {
-                if (controller.signal.aborted) {
-                  throw new Error("aborted");
-                }
+        const context = {
+          ...buildLookupContext(documentState, undefined, tooltip?.contextOverrides),
+          documentLanguage: panelLookupLanguage,
+        };
 
-                return createUnavailableSource(
-                  trimmedQuery,
-                  source.sourceId,
-                  "Nao consegui atualizar esta busca agora.",
-                  context,
-                );
+        await Promise.allSettled(
+          searchableSources.map(async (source) => {
+            let result: DictionarySourceResult;
+
+            try {
+              result = await fetchLookupSourceResult(
+                trimmedQuery,
+                source.sourceId,
+                context,
+                controller.signal,
+              );
+            } catch {
+              if (controller.signal.aborted) {
+                throw new Error("aborted");
               }
-            }),
-          );
 
-          if (controller.signal.aborted) {
-            return;
-          }
+              result = createUnavailableSource(
+                trimmedQuery,
+                source.sourceId,
+                "Nao consegui atualizar esta busca agora.",
+                context,
+              );
+            }
 
-          setSourceSearchResults((current) => {
+            if (controller.signal.aborted) {
+              return;
+            }
+
+            setSourceSearchResults((current) => ({
+              ...current,
+              [result.sourceId]: result,
+            }));
+
+            setSourceSearchLoading((current) => ({
+              ...current,
+              [source.sourceId]: false,
+            }));
+          }),
+        );
+
+        if (!controller.signal.aborted) {
+          setSourceSearchLoading((current) => {
             const next = { ...current };
 
-            for (const result of results) {
-              next[result.sourceId] = result;
+            for (const source of searchableSources) {
+              next[source.sourceId] = false;
             }
 
             return next;
           });
-        } catch {
-          if (controller.signal.aborted) {
-            return;
-          }
-        } finally {
-          if (!controller.signal.aborted) {
-            setSourceSearchLoading((current) => {
-              const next = { ...current };
-
-              for (const source of searchableSources) {
-                next[source.sourceId] = false;
-              }
-
-              return next;
-            });
-          }
         }
       }, 120),
     };

@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import type { Element } from "domhandler";
 import {
+  escapeHtml,
   htmlFromText,
   normalizeInlineText,
   repairMojibake,
@@ -144,8 +145,19 @@ function sanitizeLogeionHtml(html: string) {
         .map((item) => item.trim())
         .filter(Boolean),
     );
+    const isCorpusHit =
+      tagName === "mark" ||
+      originalClasses.has("highlight") ||
+      originalClasses.has("philologic-highlight");
     const style = current.attr("style") ?? "";
     const safeClasses = new Set<string>();
+
+    if (isCorpusHit) {
+      current.replaceWith(
+        `<strong class="corpusSearchHit">${escapeHtml(current.text())}</strong>`,
+      );
+      return;
+    }
 
     if (originalClasses.has("bullet")) {
       safeClasses.add("logeionBullet");
@@ -253,6 +265,7 @@ function buildExamplesCorpusSection(
 
       const rawText =
         repairMojibake(normalizeInlineText(excerptNode.text())) ?? "";
+      const excerptHtml = sanitizeLogeionHtml(excerptNode.html() ?? "");
 
       if (!rawText) {
         return null;
@@ -264,21 +277,28 @@ function buildExamplesCorpusSection(
         work ? `Obra: ${work}` : null,
       ].filter(Boolean) as string[];
 
-      return lines.join("\n");
+      const metadataHtml = [
+        author ? `<p class="lookupEntryMeta">Autor: ${escapeHtml(author)}</p>` : null,
+        work ? `<p class="lookupEntryMeta">Obra: ${escapeHtml(work)}</p>` : null,
+      ]
+        .filter(Boolean)
+        .join("");
+
+      return {
+        html: `<article class="lookupEntry corpusHitCard">${
+          excerptHtml ?? htmlFromText(rawText) ?? ""
+        }${metadataHtml}</article>`,
+        text: lines.join("\n"),
+      };
     })
-    .filter((value): value is string => Boolean(value));
+    .filter((value): value is { html: string; text: string } => Boolean(value));
 
   if (items.length === 0) {
     return null;
   }
 
-  const text = trimSectionText(items.join("\n\n"));
-  const html = items
-    .map((item) => {
-      const rendered = htmlFromText(item) ?? "";
-      return `<article class="lookupEntry corpusHitCard">${rendered}</article>`;
-    })
-    .join("");
+  const text = trimSectionText(items.map((item) => item.text).join("\n\n"));
+  const html = items.map((item) => item.html).join("");
 
   return {
     html,

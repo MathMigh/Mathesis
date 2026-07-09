@@ -1246,6 +1246,14 @@
   margin-top: 12px;
 }
 
+.sectionRich :global(.corpusSearchHit) {
+  border-radius: 0.28em;
+  background: rgba(214, 160, 103, 0.32);
+  color: var(--ink-strong);
+  font-weight: 820;
+  padding: 0 0.18em;
+}
+
 .sectionRich :global(.logeionEntry) {
   display: grid;
   gap: 0.62rem;
@@ -2294,6 +2302,11 @@
 
 :global(html[data-theme="night"]) .sectionRich :global(mark) {
   background: rgba(214, 160, 103, 0.24);
+}
+
+:global(html[data-theme="night"]) .sectionRich :global(.corpusSearchHit) {
+  background: rgba(214, 160, 103, 0.36);
+  color: #ffe9c9;
 }
 
 :global(html[data-theme="night"]) .sectionRich :global(.corpusFamilyTag) {

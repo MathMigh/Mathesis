@@ -41,7 +41,6 @@ export const SEARCHABLE_INLINE_SOURCE_IDS = new Set<DictionarySourceId>([
   "treccani",
   "logeion",
   "faria",
-  "tabelas",
 ]);
 
 export function isInlineSearchSource(sourceId: DictionarySourceId) {

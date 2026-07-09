@@ -50,7 +50,8 @@ const SOURCE_CACHE_VERSION_BY_SOURCE: Partial<Record<DictionarySourceId, string>
   porto: "2026-07-01-porto-v14",
   tabelas: "2026-07-02-tabelas-latinas-v10",
   gramatica: "2026-07-07-gramatica-pt-clean-copy-v32",
-  logeion: "2026-07-02-logeion-v10",
+  infopedia: "2026-07-09-infopedia-pt-related-v1",
+  logeion: "2026-07-09-logeion-rich-html-v11",
   mitologico: "2026-07-06-mitologico-en-stopwords-v9",
   wikipedia: "2026-07-06-wikipedia-v8",
   imagens: "2026-07-07-images-proxy-all-v9",
@@ -69,7 +70,7 @@ const SOURCE_CACHE_VERSION_BY_SOURCE: Partial<Record<DictionarySourceId, string>
   infopedia_itpt: "2026-07-04-infopedia-itpt-v1",
   infopedia_it: "2026-07-04-infopedia-it-v1",
   treccani: "2026-07-04-treccani-v1",
-  corpus: "2026-07-02-corpus-classical-v13",
+  corpus: "2026-07-09-corpus-classical-highlight-v14",
   analogico: "2026-06-20-analogia-label-v4",
 };
 

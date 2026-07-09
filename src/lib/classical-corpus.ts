@@ -1,5 +1,7 @@
 import { load } from "cheerio";
+import type { Element } from "domhandler";
 import {
+  escapeHtml,
   htmlFromText,
   normalizeInlineText,
   repairMojibake,
@@ -118,19 +120,67 @@ function buildCitationText(
   );
 }
 
-function cleanContext(html: string) {
+type CleanedContext = {
+  html: string | null;
+  text: string;
+};
+
+function cleanContext(html: string): CleanedContext {
   const $ = load(`<div>${html}</div>`);
-  const text = selectionToText($, $("div"))
+  const root = $("div").first();
+  const text = selectionToText($, root)
     .replace(/\s+/g, " ")
     .replace(/ \./g, ".")
     .trim();
   const repaired = repairMojibake(text) ?? text;
 
+  root.find("script, style, noscript, svg, iframe, img, button, input").remove();
+  root.find("*").each((_, node) => {
+    if (node.type !== "tag") {
+      return;
+    }
+
+    const element = node as Element;
+    const current = $(element);
+    const tagName = element.tagName.toLowerCase();
+    const className = current.attr("class") ?? "";
+    const isHit = tagName === "mark" || /\bhighlight\b/i.test(className);
+
+    if (isHit) {
+      current.replaceWith(
+        `<strong class="corpusSearchHit">${escapeHtml(current.text())}</strong>`,
+      );
+      return;
+    }
+
+    if (tagName === "br") {
+      current.replaceWith("<br>");
+      return;
+    }
+
+    if (!["b", "strong", "i", "em"].includes(tagName)) {
+      current.replaceWith(current.contents());
+      return;
+    }
+
+    for (const attr of Object.keys(element.attribs ?? {})) {
+      current.removeAttr(attr);
+    }
+  });
+
   if (repaired.length <= MAX_CONTEXT_LENGTH) {
-    return repaired;
+    const contextHtml = repairMojibake(root.html()?.trim() ?? "") ?? "";
+
+    return {
+      html: contextHtml ? `<p class="corpusContext">${contextHtml}</p>` : null,
+      text: repaired,
+    };
   }
 
-  return `${repaired.slice(0, MAX_CONTEXT_LENGTH).trim()}...`;
+  return {
+    html: null,
+    text: `${repaired.slice(0, MAX_CONTEXT_LENGTH).trim()}...`,
+  };
 }
 
 function buildOccurrenceSections(
@@ -152,13 +202,23 @@ function buildOccurrenceSections(
       title ? `Obra: ${title}` : null,
       citation ? `Passagem: ${citation}` : null,
       genre ? `G\u00eanero: ${genre}` : null,
-      context || null,
+      context.text || null,
     ].filter(Boolean) as string[];
 
     const text = lines.join("\n");
+    const metaHtml = [
+      author ? `<p class="lookupEntryMeta">Autor: ${escapeHtml(author)}</p>` : null,
+      title ? `<p class="lookupEntryMeta">Obra: ${escapeHtml(title)}</p>` : null,
+      citation ? `<p class="lookupEntryMeta">Passagem: ${escapeHtml(citation)}</p>` : null,
+      genre ? `<p class="lookupEntryMeta">G\u00eanero: ${escapeHtml(genre)}</p>` : null,
+    ]
+      .filter(Boolean)
+      .join("");
 
     return {
-      html: htmlFromText(text),
+      html: `<article class="lookupEntry corpusHitCard">${metaHtml}${
+        context.html ?? htmlFromText(context.text)
+      }</article>`,
       label: String(index + 1),
       text,
     } satisfies LookupSection;

@@ -319,6 +319,90 @@ function extractArticleContext(cleanLines: string[], startIndex = 0) {
   return collected.length > 0 ? collected.join("\n") : null;
 }
 
+function isCompactRelatedInfopediaPage(cleanLines: string[]) {
+  return cleanLines.length > 0 && cleanLines.length < 180;
+}
+
+function isRelatedInfopediaLine(line: string) {
+  if (!line || line.length < 3) {
+    return false;
+  }
+
+  if (/^(?:Title|URL Source|Markdown Content):?/i.test(line)) {
+    return false;
+  }
+
+  if (IGNORE_PATTERNS.some((pattern) => pattern.test(line))) {
+    return false;
+  }
+
+  if (/^(?:Cookies|Entrar|Registar|Menu|Dicionarios|Pesquisa|Apps|Jogos)$/i.test(line)) {
+    return false;
+  }
+
+  return true;
+}
+
+function extractRelatedInfopediaContent(cleanLines: string[], requestedWord: string) {
+  if (!isCompactRelatedInfopediaPage(cleanLines)) {
+    return null;
+  }
+
+  const startIndex = cleanLines.findIndex((line) =>
+    /^Markdown Content:?$/i.test(line),
+  );
+  const candidates = buildPortugueseLookupCandidates(requestedWord).map(normalizeSearchText);
+  const collected: string[] = [];
+
+  for (
+    let index = startIndex >= 0 ? startIndex + 1 : 0;
+    index < cleanLines.length;
+    index += 1
+  ) {
+    const line = cleanLines[index] ?? "";
+
+    if (!isRelatedInfopediaLine(line)) {
+      if (collected.length > 0 && !collected.at(-1)) {
+        continue;
+      }
+
+      if (collected.length > 0) {
+        collected.push("");
+      }
+
+      continue;
+    }
+
+    collected.push(line);
+
+    if (collected.length >= 80) {
+      break;
+    }
+  }
+
+  while (collected[0] === "") {
+    collected.shift();
+  }
+
+  while (collected.at(-1) === "") {
+    collected.pop();
+  }
+
+  const text = collected.join("\n").trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const normalizedText = normalizeSearchText(text);
+
+  if (!candidates.some((candidate) => normalizedText.includes(candidate))) {
+    return null;
+  }
+
+  return text;
+}
+
 async function fetchMirrorEndpoint(endpoint: string, requestedWord: string) {
   const response = await fetch(
     `${endpoint}${encodeURIComponent(requestedWord)}`,
@@ -398,6 +482,21 @@ async function lookupInfopediaEntry(
   const headingIndex = findDictionaryHeadingIndex(rawLines, lookupWord);
 
   if (headingIndex === -1) {
+    const relatedContent = extractRelatedInfopediaContent(cleanLines, lookupWord);
+
+    if (relatedContent) {
+      return buildResult(
+        requestedWord,
+        "found",
+        "A Infopedia retornou entradas relacionadas para esta palavra.",
+        lookupWord,
+        "Entradas relacionadas",
+        htmlFromText(relatedContent),
+        relatedContent,
+        lookupWord,
+      );
+    }
+
     return buildResult(
       requestedWord,
       "unavailable",
