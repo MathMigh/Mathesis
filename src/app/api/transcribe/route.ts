@@ -5,6 +5,7 @@ import {
   createGeminiFailureState,
   noteGeminiHttpFailure,
 } from "@/lib/gemini-runtime";
+import { consumeRateLimit } from "@/lib/request-security";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -179,6 +180,24 @@ async function transcribeWithGemini(audioBase64: string, mimeTypes: string[]) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = consumeRateLimit(request, "transcribe", {
+    intervalMs: 60_000,
+    limit: 8,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { message: "Muitas transcricoes em pouco tempo. Tente novamente em instantes." },
+      {
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "X-Content-Type-Options": "nosniff",
+        },
+        status: 429,
+      },
+    );
+  }
+
   try {
     const body = (await request.json()) as {
       audioBase64?: string;

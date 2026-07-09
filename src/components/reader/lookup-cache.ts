@@ -18,6 +18,27 @@ const VOLATILE_LOOKUP_SOURCE_IDS = new Set<DictionarySourceId>([
   "wikipedia",
 ]);
 
+function normalizeCachePart(value: string | undefined) {
+  return (value ?? "")
+    .normalize("NFC")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .toLocaleLowerCase("pt-BR")
+    .slice(0, 240);
+}
+
+function hashCacheInput(value: string) {
+  let hash = 0x811c9dc5;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+
+  return hash.toString(36).padStart(7, "0");
+}
+
 type StoredLookupCache = Record<
   string,
   {
@@ -28,16 +49,15 @@ type StoredLookupCache = Record<
 >;
 
 export function buildLookupCacheKey(word: string, context: LookupContext) {
-  const fingerprint = [
-    context.documentAuthor ?? "",
-    context.documentLanguage ?? "",
-    context.documentTitle ?? "",
-    context.documentLabel ?? "",
-  ]
-    .map((value) => value.toLocaleLowerCase("pt-BR"))
-    .join("::");
+  const fingerprint = JSON.stringify([
+    normalizeCachePart(word),
+    normalizeCachePart(context.documentAuthor),
+    normalizeCachePart(context.documentLanguage),
+    normalizeCachePart(context.documentTitle),
+    normalizeCachePart(context.documentLabel),
+  ]);
 
-  return `${LOOKUP_CLIENT_CACHE_SCHEMA_VERSION}::${word.toLocaleLowerCase("pt-BR")}::${fingerprint}`;
+  return `${LOOKUP_CLIENT_CACHE_SCHEMA_VERSION}::${hashCacheInput(fingerprint)}`;
 }
 
 export function readLookupFromBrowserCache(cacheKey: string) {

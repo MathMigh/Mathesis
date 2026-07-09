@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { consumeRateLimit } from "@/lib/request-security";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -6,7 +7,9 @@ export const maxDuration = 30;
 const IMAGE_CACHE_HEADERS = {
   "Cache-Control":
     "public, max-age=0, s-maxage=31536000, stale-while-revalidate=604800",
+  "X-Content-Type-Options": "nosniff",
 };
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 function isBlockedPrivateHost(hostname: string) {
   const normalized = hostname.trim().toLocaleLowerCase("en-US");
@@ -44,7 +47,62 @@ function isBlockedPrivateHost(hostname: string) {
   return false;
 }
 
+async function readImageBufferWithLimit(response: Response) {
+  const contentLength = Number(response.headers.get("content-length") ?? 0);
+
+  if (contentLength > MAX_IMAGE_BYTES) {
+    throw new Error("image-too-large");
+  }
+
+  const reader = response.body?.getReader();
+
+  if (!reader) {
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    if (value) {
+      size += value.byteLength;
+
+      if (size > MAX_IMAGE_BYTES) {
+        throw new Error("image-too-large");
+      }
+
+      chunks.push(value);
+    }
+  }
+
+  return Buffer.concat(chunks);
+}
+
 export async function GET(request: Request) {
+  const rateLimit = consumeRateLimit(request, "image-proxy", {
+    intervalMs: 60_000,
+    limit: 180,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { message: "Muitas imagens solicitadas em pouco tempo." },
+      {
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "X-Content-Type-Options": "nosniff",
+        },
+        status: 429,
+      },
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const rawSrc = searchParams.get("src")?.trim();
 
@@ -89,6 +147,18 @@ export async function GET(request: Request) {
       );
     }
 
+    const finalUrl = new URL(response.url);
+
+    if (
+      !/^https?:$/i.test(finalUrl.protocol) ||
+      isBlockedPrivateHost(finalUrl.hostname)
+    ) {
+      return NextResponse.json(
+        { message: "Redirecionamento de imagem nao permitido." },
+        { status: 400 },
+      );
+    }
+
     const contentType = response.headers.get("content-type") ?? "image/jpeg";
 
     if (!contentType.toLocaleLowerCase("en-US").startsWith("image/")) {
@@ -98,7 +168,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = await readImageBufferWithLimit(response);
 
     return new NextResponse(buffer, {
       headers: {

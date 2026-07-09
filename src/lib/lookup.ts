@@ -1,4 +1,5 @@
 import { lookupAnalogico } from "./analogico";
+import { createHash } from "node:crypto";
 import { lookupAulete } from "./aulete";
 import { lookupClassicCorpus } from "./classic-corpus";
 import { lookupEnglishAnalogico } from "./english-analogico";
@@ -132,7 +133,16 @@ function buildSourceCacheKey(
   contextFingerprint = "",
 ) {
   const sourceVersion = SOURCE_CACHE_VERSION_BY_SOURCE[sourceId] ?? SOURCE_CACHE_VERSION;
-  return `${sourceVersion}:${sourceId}:${requestedWord.toLocaleLowerCase("pt-BR")}:${contextFingerprint.toLocaleLowerCase("pt-BR")}`;
+  const digest = createHash("sha256")
+    .update(
+      JSON.stringify([
+        requestedWord.toLocaleLowerCase("pt-BR"),
+        contextFingerprint.toLocaleLowerCase("pt-BR"),
+      ]),
+    )
+    .digest("hex");
+
+  return `${sourceVersion}:${sourceId}:${digest}`;
 }
 
 function buildPersistentSourceCacheKey(
@@ -141,22 +151,39 @@ function buildPersistentSourceCacheKey(
   contextFingerprint = "",
 ) {
   const sourceVersion = SOURCE_CACHE_VERSION_BY_SOURCE[sourceId] ?? SOURCE_CACHE_VERSION;
+  const digest = createHash("sha256")
+    .update(
+      JSON.stringify([
+        requestedWord.toLocaleLowerCase("pt-BR"),
+        contextFingerprint.toLocaleLowerCase("pt-BR"),
+      ]),
+    )
+    .digest("hex");
+
   return [
     PERSISTENT_SOURCE_CACHE_SCHEMA,
     sourceVersion,
     sourceId,
-    requestedWord.toLocaleLowerCase("pt-BR"),
-    contextFingerprint.toLocaleLowerCase("pt-BR"),
+    digest,
   ].join(":");
 }
 
 function buildContextFingerprint(context?: LookupContext) {
   return [
-    context?.documentAuthor ?? "",
-    context?.documentLanguage ?? "",
-    context?.documentTitle ?? "",
-    context?.documentLabel ?? "",
-  ].join("|");
+    context?.documentAuthor,
+    context?.documentLanguage,
+    context?.documentTitle,
+    context?.documentLabel,
+  ]
+    .map((value) =>
+      (value ?? "")
+        .normalize("NFC")
+        .replace(/[\u0000-\u001f\u007f]/gu, " ")
+        .replace(/\s+/gu, " ")
+        .trim()
+        .slice(0, 240),
+    )
+    .join("|");
 }
 
 const CONTEXT_SENSITIVE_SOURCE_IDS = new Set<DictionarySourceId>([
