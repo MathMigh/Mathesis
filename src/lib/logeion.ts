@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import type { Element } from "domhandler";
 import {
   htmlFromText,
   normalizeInlineText,
@@ -11,6 +12,49 @@ import type { DictionarySourceResult, LookupContext, LookupSection } from "./loo
 const LOGEION_API = "https://anastrophe.uchicago.edu/logeion-api";
 const USER_AGENT = "Mathesis/1.0 classical lookup";
 const MAX_SECTION_TEXT = 20000;
+const LOGEION_STRIP_SELECTORS = [
+  "script",
+  "style",
+  "textarea",
+  "svg",
+  "noscript",
+  "iframe",
+  "img",
+  "button",
+  "input",
+  "form",
+].join(", ");
+const LOGEION_ALLOWED_TAGS = new Set([
+  "b",
+  "blockquote",
+  "br",
+  "div",
+  "em",
+  "hr",
+  "i",
+  "li",
+  "ol",
+  "p",
+  "small",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "u",
+  "ul",
+]);
+const LOGEION_LABELS: Record<string, string> = {
+  DMLBSx: "DMLBS",
+  Lewis: "Lewis Elementary",
+  LewisShort: "Lewis & Short",
+};
 
 type LogeionFindResponse = {
   description?: string;
@@ -55,10 +99,85 @@ function buildResult(
   };
 }
 
-function cleanLogeionHtml(html: string) {
+function cleanLogeionText(html: string) {
   const $ = load(`<div>${html}</div>`);
   const text = selectionToText($, $("div"));
   return (repairMojibake(text) ?? text).normalize("NFC");
+}
+
+function displayLogeionLabel(label: string) {
+  return LOGEION_LABELS[label] ?? label;
+}
+
+function unwrapNode($: ReturnType<typeof load>, element: Element) {
+  $(element).replaceWith($(element).contents());
+}
+
+function sanitizeLogeionHtml(html: string) {
+  const $ = load(`<div class="logeionEntry">${html}</div>`);
+  const root = $(".logeionEntry").first();
+
+  root.find(LOGEION_STRIP_SELECTORS).remove();
+
+  root.find("*").each((_, node) => {
+    if (node.type !== "tag") {
+      return;
+    }
+
+    const element = node as Element;
+    const tagName = element.tagName.toLowerCase();
+    const current = $(element);
+
+    if (tagName === "a" || tagName === "font") {
+      unwrapNode($, element);
+      return;
+    }
+
+    if (!LOGEION_ALLOWED_TAGS.has(tagName)) {
+      unwrapNode($, element);
+      return;
+    }
+
+    const originalClasses = new Set(
+      (current.attr("class") ?? "")
+        .split(/\s+/u)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    );
+    const style = current.attr("style") ?? "";
+    const safeClasses = new Set<string>();
+
+    if (originalClasses.has("bullet")) {
+      safeClasses.add("logeionBullet");
+    }
+
+    if (originalClasses.has("content")) {
+      safeClasses.add("logeionContent");
+    }
+
+    if (originalClasses.has("dictlink") || originalClasses.has("dicttitle")) {
+      safeClasses.add("logeionDictionaryLabel");
+    }
+
+    if (/small-caps/iu.test(style)) {
+      safeClasses.add("logeionSmallCaps");
+    }
+
+    for (const attr of Object.keys(element.attribs ?? {})) {
+      current.removeAttr(attr);
+    }
+
+    if (safeClasses.size > 0) {
+      current.attr("class", [...safeClasses].join(" "));
+    }
+  });
+
+  root.find("br").replaceWith("<br>");
+
+  const cleaned = repairMojibake(root.html()?.trim() ?? "");
+  const content = cleaned && cleaned.length > 0 ? cleaned.normalize("NFC") : null;
+
+  return content ? `<div class="logeionEntry">${content}</div>` : null;
 }
 
 function trimSectionText(value: string) {
@@ -80,7 +199,7 @@ function buildShortDefSection(shortdefs: string[] | undefined): LookupSection | 
 
   return {
     html: htmlFromText(text),
-    label: "Definicao rapida",
+    label: "Definição rápida",
     text,
   };
 }
@@ -186,18 +305,19 @@ function buildDictionarySections(
 
       const text = trimSectionText(
         (entry.es ?? [])
-          .map((item) => cleanLogeionHtml(item))
+          .map((item) => cleanLogeionText(item))
           .filter(Boolean)
           .join("\n\n"),
       );
+      const html = sanitizeLogeionHtml((entry.es ?? []).join("\n"));
 
       if (!label || !text) {
         return null;
       }
 
       return {
-        html: htmlFromText(text),
-        label,
+        html: html ?? htmlFromText(text),
+        label: displayLogeionLabel(label),
         text,
       };
     })
@@ -232,7 +352,7 @@ function buildFrequencySection(
 
   return {
     html: htmlFromText(text),
-    label: "Frequencia",
+    label: "Frequência",
     text,
   };
 }
