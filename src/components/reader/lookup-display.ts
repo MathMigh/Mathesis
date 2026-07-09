@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { repairMojibake } from "@/lib/dictionary-utils";
 import {
   createLoadingSource,
@@ -10,6 +11,53 @@ import type {
   LookupContext,
   LookupPayload,
 } from "@/lib/lookup-types";
+
+const LOOKUP_ALLOWED_TAGS = [
+  "a",
+  "blockquote",
+  "br",
+  "code",
+  "div",
+  "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "img",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "small",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+] as const;
+
+const LOOKUP_ALLOWED_ATTR = [
+  "alt",
+  "class",
+  "colspan",
+  "href",
+  "loading",
+  "referrerpolicy",
+  "rel",
+  "rowspan",
+  "scope",
+  "src",
+  "target",
+] as const;
 
 function escapeHtmlText(value: string) {
   return value
@@ -183,6 +231,70 @@ function getDisplaySourceNote(source: DictionarySourceResult) {
   return repairedNote;
 }
 
+function sanitizeLookupHtml(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const repaired = repairMojibake(value) ?? value;
+  const purifyCandidate = DOMPurify as unknown as {
+    default?: { sanitize?: (dirty: string, config: object) => string };
+    sanitize?: (dirty: string, config: object) => string;
+  };
+  const sanitizable =
+    typeof purifyCandidate.sanitize === "function"
+      ? purifyCandidate
+      : typeof purifyCandidate.default?.sanitize === "function"
+        ? purifyCandidate.default
+        : null;
+
+  if (!sanitizable || typeof window === "undefined") {
+    return repaired;
+  }
+
+  const sanitize = sanitizable.sanitize;
+
+  if (typeof sanitize !== "function") {
+    return repaired;
+  }
+
+  const sanitized = sanitize(repaired, {
+    ALLOWED_ATTR: [...LOOKUP_ALLOWED_ATTR],
+    ALLOWED_TAGS: [...LOOKUP_ALLOWED_TAGS],
+    FORBID_ATTR: ["style"],
+    FORBID_TAGS: ["audio", "canvas", "form", "iframe", "input", "object", "script", "style", "textarea", "video"],
+    USE_PROFILES: { html: true },
+  });
+  const template = window.document.createElement("template");
+  template.innerHTML = sanitized;
+
+  template.content.querySelectorAll("a[href]").forEach((anchor) => {
+    const href = anchor.getAttribute("href")?.trim() ?? "";
+
+    if (!/^(?:https?:|\/|#)/iu.test(href)) {
+      anchor.removeAttribute("href");
+    }
+
+    if (anchor.getAttribute("target") === "_blank") {
+      anchor.setAttribute("rel", "noreferrer noopener");
+    }
+  });
+
+  template.content.querySelectorAll("img[src]").forEach((image) => {
+    const src = image.getAttribute("src")?.trim() ?? "";
+
+    if (!/^(?:https?:|\/api\/image-proxy\?src=|data:image\/)/iu.test(src)) {
+      image.remove();
+      return;
+    }
+
+    image.setAttribute("loading", "lazy");
+    image.setAttribute("referrerpolicy", "no-referrer");
+  });
+
+  return template.innerHTML.trim() || null;
+}
+
 function getDisplaySections(source: DictionarySourceResult) {
   return source.sections.map((section) => {
     const repairedLabel = repairMojibake(section.label) ?? section.label;
@@ -195,7 +307,7 @@ function getDisplaySections(source: DictionarySourceResult) {
       return {
         ...section,
         label: repairedLabel,
-        html: htmlFromDisplayMarkdown(text),
+        html: sanitizeLookupHtml(htmlFromDisplayMarkdown(text)),
         text,
       };
     }
@@ -206,7 +318,7 @@ function getDisplaySections(source: DictionarySourceResult) {
       return {
         ...section,
         label: repairedLabel,
-        html: htmlFromDisplayMarkdown(text),
+        html: sanitizeLookupHtml(htmlFromDisplayMarkdown(text)),
         text,
       };
     }
@@ -217,14 +329,16 @@ function getDisplaySections(source: DictionarySourceResult) {
       return {
         ...section,
         label: repairedLabel,
-        html: repairedHtml ?? htmlFromDisplayMarkdown(text),
+        html: sanitizeLookupHtml(repairedHtml ?? htmlFromDisplayMarkdown(text)),
         text,
       };
     }
 
     return {
       ...section,
-      html: repairedHtml ?? (repairedText ? htmlFromDisplayMarkdown(repairedText) : section.html),
+      html: sanitizeLookupHtml(
+        repairedHtml ?? (repairedText ? htmlFromDisplayMarkdown(repairedText) : section.html),
+      ),
       label: repairedLabel,
       text: repairedText ?? section.text,
     };

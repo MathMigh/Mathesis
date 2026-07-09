@@ -10,6 +10,25 @@ const IMAGE_CACHE_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 };
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const ALLOWED_IMAGE_HOSTS = [
+  ".duckduckgo.com",
+  ".openverse.engineering",
+  ".openverse.org",
+  ".pexels.com",
+  ".pixabay.com",
+  ".unsplash.com",
+  ".wikimedia.org",
+  ".wikipedia.org",
+  "cdn.pixabay.com",
+  "duckduckgo.com",
+  "external-content.duckduckgo.com",
+  "images.openverse.engineering",
+  "images.pexels.com",
+  "images.unsplash.com",
+  "openverse.org",
+  "pixabay.com",
+  "plus.unsplash.com",
+].map((host) => host.toLocaleLowerCase("en-US"));
 
 function isBlockedPrivateHost(hostname: string) {
   const normalized = hostname.trim().toLocaleLowerCase("en-US");
@@ -45,6 +64,16 @@ function isBlockedPrivateHost(hostname: string) {
   }
 
   return false;
+}
+
+function isAllowedImageHost(hostname: string) {
+  const normalized = hostname.trim().toLocaleLowerCase("en-US");
+
+  return ALLOWED_IMAGE_HOSTS.some((allowedHost) =>
+    allowedHost.startsWith(".")
+      ? normalized === allowedHost.slice(1) || normalized.endsWith(allowedHost)
+      : normalized === allowedHost,
+  );
 }
 
 async function readImageBufferWithLimit(response: Response) {
@@ -85,7 +114,7 @@ async function readImageBufferWithLimit(response: Response) {
 }
 
 export async function GET(request: Request) {
-  const rateLimit = consumeRateLimit(request, "image-proxy", {
+  const rateLimit = await consumeRateLimit(request, "image-proxy", {
     intervalMs: 60_000,
     limit: 180,
   });
@@ -123,7 +152,8 @@ export async function GET(request: Request) {
 
   if (
     !/^https?:$/i.test(sourceUrl.protocol) ||
-    isBlockedPrivateHost(sourceUrl.hostname)
+    isBlockedPrivateHost(sourceUrl.hostname) ||
+    !isAllowedImageHost(sourceUrl.hostname)
   ) {
     return NextResponse.json(
       { message: "Host de imagem nao permitido." },
@@ -151,7 +181,8 @@ export async function GET(request: Request) {
 
     if (
       !/^https?:$/i.test(finalUrl.protocol) ||
-      isBlockedPrivateHost(finalUrl.hostname)
+      isBlockedPrivateHost(finalUrl.hostname) ||
+      !isAllowedImageHost(finalUrl.hostname)
     ) {
       return NextResponse.json(
         { message: "Redirecionamento de imagem nao permitido." },

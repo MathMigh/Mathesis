@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       rawSource && (LOOKUP_SOURCE_IDS as readonly string[]).includes(rawSource)
         ? (rawSource as DictionarySourceId)
         : null;
-    const rateLimit = consumeRateLimit(
+    const rateLimit = await consumeRateLimit(
       request,
       sourceForLimit && AI_BACKED_SOURCE_IDS.has(sourceForLimit)
         ? "lookup-ai"

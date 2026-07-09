@@ -12,23 +12,27 @@
     "@lingo-reader/epub-parser": "^0.4.6",
     "@lingo-reader/fb2-parser": "^0.4.6",
     "@lingo-reader/mobi-parser": "^0.4.6",
-    "@vercel/blob": "^2.4.0",
+    "@vercel/blob": "2.6.1",
     "cheerio": "^1.2.0",
-    "dompurify": "^3.4.9",
+    "dompurify": "3.4.11",
     "iconv-lite": "^0.7.2",
     "jspdf": "^4.2.1",
     "mammoth": "^1.12.0",
-    "next": "16.2.9",
+    "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-pdf": "^10.4.1"
+  },
+  "overrides": {
+    "postcss": "8.5.16",
+    "undici": "8.7.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.10",
     "typescript": "^5"
   }
 }

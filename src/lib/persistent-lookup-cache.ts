@@ -106,7 +106,6 @@ async function readBlobLookupCache<T>(key: string) {
     }
 
     const text = await new Response(result.stream).text();
-    console.info("MATHESIS_BLOB_CACHE_HIT");
     return JSON.parse(text) as T;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -132,7 +131,6 @@ async function writeBlobLookupCache(key: string, value: unknown) {
       cacheControlMaxAge: 31536000,
       contentType: "application/json; charset=utf-8",
     });
-    console.info("MATHESIS_BLOB_CACHE_WRITE");
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
 
@@ -140,7 +138,6 @@ async function writeBlobLookupCache(key: string, value: unknown) {
       blobCacheDisabled = true;
     }
 
-    console.warn(`MATHESIS_BLOB_CACHE_WRITE_FAIL ${message.slice(0, 160)}`);
     // Blob persistence is a resilience layer; lookup must never fail because
     // storage was temporarily unavailable.
   }

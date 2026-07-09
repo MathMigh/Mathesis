@@ -180,7 +180,7 @@ async function transcribeWithGemini(audioBase64: string, mimeTypes: string[]) {
 }
 
 export async function POST(request: Request) {
-  const rateLimit = consumeRateLimit(request, "transcribe", {
+  const rateLimit = await consumeRateLimit(request, "transcribe", {
     intervalMs: 60_000,
     limit: 8,
   });

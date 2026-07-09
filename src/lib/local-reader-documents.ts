@@ -197,8 +197,19 @@ function sanitizeReaderHtml(value: string) {
         ? purifyCandidate.default
         : null;
 
+  const basicSanitize = (dirty: string) =>
+    dirty
+      .replace(
+        /<\s*(audio|canvas|form|iframe|input|object|script|style|textarea|video)\b[\s\S]*?<\s*\/\s*\1\s*>/giu,
+        "",
+      )
+      .replace(/\s+on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
+      .replace(/\s+style\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
+      .replace(/\s+(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/giu, "")
+      .replace(/\s+(href|src)\s*=\s*(["'])\s*data:text\/html[\s\S]*?\2/giu, "");
+
   if (!sanitizable || typeof window === "undefined") {
-    return value;
+    return basicSanitize(value);
   }
 
   const sanitize = sanitizable.sanitize;
@@ -207,7 +218,7 @@ function sanitizeReaderHtml(value: string) {
     return value;
   }
 
-  return sanitize(value, {
+  return sanitize(basicSanitize(value), {
     FORBID_TAGS: [
       "audio",
       "canvas",
