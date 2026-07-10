@@ -1,15 +1,5 @@
 import { escapeHtml, normalizeInlineText, repairMojibake } from "./dictionary-utils";
-import type {
-  DictionarySourceId,
-  DictionarySourceResult,
-  LookupSection,
-} from "./lookup-types";
-
-type InfopediaConfig = {
-  label: string;
-  path: string;
-  sourceId: DictionarySourceId;
-};
+import type { DictionarySourceResult, LookupSection } from "./lookup-types";
 
 type ParsedEntry = {
   canonicalWord: string;
@@ -17,77 +7,30 @@ type ParsedEntry = {
   text: string;
 };
 
-const BASE_URL = "https://www.infopedia.pt/dicionarios/";
-const MIRROR_URL = "https://r.jina.ai/http://https://www.infopedia.pt/dicionarios/";
+const BASE_URL = "https://www.infopedia.pt/dicionarios/ingles-portugues/";
+const MIRROR_URL =
+  "https://r.jina.ai/http://https://www.infopedia.pt/dicionarios/ingles-portugues/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0 Safari/537.36";
 
-const BILINGUAL: Record<string, InfopediaConfig> = {
-  de: {
-    label: "Alemão-Português",
-    path: "alemao-portugues",
-    sourceId: "infopedia_dept",
-  },
-  en: {
-    label: "Inglês-Português",
-    path: "ingles-portugues",
-    sourceId: "infopedia_enpt",
-  },
-  es: {
-    label: "Espanhol-Português",
-    path: "espanhol-portugues",
-    sourceId: "infopedia_espt",
-  },
-  fr: {
-    label: "Francês-Português",
-    path: "frances-portugues",
-    sourceId: "infopedia_frpt",
-  },
-  it: {
-    label: "Italiano-Português",
-    path: "italiano-portugues",
-    sourceId: "infopedia_itpt",
-  },
-};
-
-const MONOLINGUAL: Record<string, InfopediaConfig> = {
-  de: {
-    label: "Alemão-Alemão",
-    path: "alemao-alemao",
-    sourceId: "infopedia_de",
-  },
-  en: {
-    label: "Inglês-Português",
-    path: "ingles-portugues",
-    sourceId: "infopedia_en",
-  },
-  es: {
-    label: "Espanhol-Espanhol",
-    path: "espanhol-espanhol",
-    sourceId: "infopedia_es",
-  },
-  fr: {
-    label: "Francês-Francês",
-    path: "frances-frances",
-    sourceId: "infopedia_fr",
-  },
-  it: {
-    label: "Italiano-Italiano",
-    path: "italiano-italiano",
-    sourceId: "infopedia_it",
-  },
-};
-
 const ENTRY_HINT_RE =
-  /\b(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|nome|substantivo|verbo|adjetivo|advérbio|adverbio|preposição|preposicao|conjunção|conjuncao|pronome)\b/iu;
+  /\b(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|adjetivo|advérbio|advérbio|nome|substantivo|verbo|pronome)\b/iu;
 const PART_OF_SPEECH_RE =
-  /^(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|nome|substantivo|verbo|adjetivo|advérbio|adverbio|preposição|preposicao|conjunção|conjuncao|pronome|locução|locucao)(?:\s*,\s*(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|nome|substantivo|verbo|adjetivo|advérbio|adverbio|preposição|preposicao|conjunção|conjuncao|pronome|locução|locucao))*$/iu;
+  /^(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|adjetivo|advérbio|nome|substantivo|verbo|pronome)(?:\s*,\s*(?:noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection|determiner|proper noun|adjetivo|advérbio|nome|substantivo|verbo|pronome))*$/iu;
 const STOP_LINE_RE =
-  /^(?:Outros exemplos de uso|Como referenciar|Partilhar|Ver mais|See more|Share|How to cite|Examples of use|Related words|Outras sugestões)$/iu;
+  /^(?:Outros exemplos de uso|Como referenciar|Partilhar|Ver mais|Examples of use|Related words|Outras sugestões)$/iu;
 const IGNORE_LINE_RE =
-  /^(?:Markdown Content:?|URL Source:|Bilingual dictionaries|Monolingual dictionaries|Bilingues|Portuguese|English|Língua portuguesa|Entrar|Favoritos|Audio\s*\d*|conjugação|conjugacao|-->)$/iu;
+  /^(?:Markdown Content:?|URL Source:|Entrar|Favoritos|Audio\s*\d*|conjugação|conjugacao|-->)$/iu;
 const PRONUNCIATION_RE = /(?:^[/[]|[ˈˌəɛɪɔʊæɑðθʃʒŋœɒʌɐɨ])/u;
 const SENSE_INDEX_RE = /^\d+\.$/u;
+
+function buildFallbackSection(message: string): LookupSection {
+  return {
+    html: `<article class="lookupEntry"><p class="lookupLine">${escapeHtml(message)}</p></article>`,
+    label: "Inglês-Português",
+    text: message,
+  };
+}
 
 function cleanLine(value: string) {
   const withoutImages = value.replace(/!\[[^\]]*\]\([^)]*\)/gu, " ");
@@ -130,13 +73,14 @@ function dedupeHeadword(value: string) {
 }
 
 function cleanHeadword(value: string, fallback: string) {
-  const cleaned = dedupeHeadword(
-    cleanLine(value)
-      .replace(/[|]+$/gu, "")
-      .replace(/\bAudio\s*\d+\b/giu, " ")
-      .trim(),
+  return (
+    dedupeHeadword(
+      cleanLine(value)
+        .replace(/[|]+$/gu, "")
+        .replace(/\bAudio\s*\d+\b/giu, " ")
+        .trim(),
+    ) || fallback
   );
-  return cleaned || fallback;
 }
 
 function looksLikePartOfSpeech(line: string) {
@@ -198,14 +142,6 @@ function findEntryStart(lines: string[], requestedWord: string) {
   return -1;
 }
 
-function buildFallbackSection(label: string, message: string): LookupSection {
-  return {
-    html: `<article class="lookupEntry"><p class="lookupLine">${escapeHtml(message)}</p></article>`,
-    label,
-    text: message,
-  };
-}
-
 function buildStyledEntry(lines: string[]) {
   const htmlParts = [`<article class="lookupEntry lookupEntry--infopedia">`];
   const textParts: string[] = [];
@@ -260,7 +196,7 @@ function buildStyledEntry(lines: string[]) {
     textParts.push(line);
   }
 
-  htmlParts.push(`</article>`);
+  htmlParts.push("</article>");
 
   return {
     html: htmlParts.join(""),
@@ -327,7 +263,6 @@ function buildSectionFromMirror(markdown: string, requestedWord: string): Parsed
 
 function buildResult(
   requestedWord: string,
-  config: InfopediaConfig,
   status: DictionarySourceResult["status"],
   note: string,
   sections: LookupSection[] = [],
@@ -335,52 +270,43 @@ function buildResult(
 ): DictionarySourceResult {
   return {
     canonicalWord,
-    label:
-      config.sourceId === "infopedia_en" || config.sourceId === "infopedia_enpt"
-        ? "Infopédia"
-        : config.label,
+    label: "Infopédia",
     note,
     sections,
-    sourceId: config.sourceId,
-    sourceUrl: `${BASE_URL}${config.path}/${encodeURIComponent(requestedWord)}`,
+    sourceId: "infopedia_enpt",
+    sourceUrl: `${BASE_URL}${encodeURIComponent(requestedWord)}`,
     status,
   };
 }
 
-async function lookupInfopediaWord(
-  word: string,
-  config: InfopediaConfig,
-): Promise<DictionarySourceResult> {
+export async function lookupInfopediaEnPt(word: string): Promise<DictionarySourceResult> {
   const requestedWord = normalizeInlineText(word.normalize("NFC")).toLocaleLowerCase("en-US");
 
   if (!requestedWord) {
     return buildResult(
       requestedWord,
-      config,
       "not_found",
-      `Digite uma palavra para consultar ${config.label}.`,
+      'Digite uma palavra para consultar a Infopédia.',
+      [buildFallbackSection("Digite uma palavra para consultar a Infopédia.")],
     );
   }
 
   try {
-    const response = await fetch(
-      `${MIRROR_URL}${config.path}/${encodeURIComponent(requestedWord)}`,
-      {
-        cache: "no-store",
-        headers: {
-          "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
-          "user-agent": USER_AGENT,
-        },
-        signal: AbortSignal.timeout(22000),
+    const response = await fetch(`${MIRROR_URL}${encodeURIComponent(requestedWord)}`, {
+      cache: "no-store",
+      headers: {
+        "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+        "user-agent": USER_AGENT,
       },
-    );
+      signal: AbortSignal.timeout(22000),
+    });
 
     if (!response.ok) {
       return buildResult(
         requestedWord,
-        config,
         "unavailable",
-        `Não consegui consultar ${config.label} agora.`,
+        "Não consegui consultar a Infopédia agora.",
+        [buildFallbackSection("Não consegui consultar a Infopédia agora.")],
       );
     }
 
@@ -390,21 +316,20 @@ async function lookupInfopediaWord(
     if (!entry) {
       return buildResult(
         requestedWord,
-        config,
         "not_found",
-        `Não encontrei verbete direto para "${requestedWord}" em ${config.label}.`,
+        `Não encontrei verbete direto para "${requestedWord}" na Infopédia.`,
+        [buildFallbackSection(`Não encontrei verbete direto para "${requestedWord}" na Infopédia.`)],
       );
     }
 
     return buildResult(
       requestedWord,
-      config,
       "found",
-      `Verbete extraído da Infopédia: ${config.label}.`,
+      "Consulta reunida da Infopédia em inglês-português.",
       [
         {
           html: entry.html,
-          label: config.label,
+          label: "Inglês-Português",
           text: entry.text,
         },
       ],
@@ -413,61 +338,9 @@ async function lookupInfopediaWord(
   } catch {
     return buildResult(
       requestedWord,
-      config,
       "unavailable",
-      `Não consegui consultar ${config.label} agora.`,
+      "Não consegui consultar a Infopédia agora.",
+      [buildFallbackSection("Não consegui consultar a Infopédia agora.")],
     );
   }
-}
-
-export async function lookupInfopediaEnPt(word: string): Promise<DictionarySourceResult> {
-  const result = await lookupInfopediaWord(word, BILINGUAL.en);
-
-  return {
-    ...result,
-    label: "Infopédia",
-    note:
-      result.status === "found"
-        ? "Consulta reunida da Infopédia em inglês-português."
-        : result.note,
-    sections: result.sections.map((section) => ({
-      ...section,
-      label: "Inglês-Português",
-    })),
-    sourceId: "infopedia_enpt",
-  };
-}
-
-export async function lookupInfopediaEnglish(word: string): Promise<DictionarySourceResult> {
-  const result = await lookupInfopediaEnPt(word);
-
-  return {
-    ...result,
-    sourceId: "infopedia_en",
-  };
-}
-
-export async function lookupInfopediaBilingual(
-  word: string,
-  languageCode: keyof typeof BILINGUAL,
-): Promise<DictionarySourceResult> {
-  return lookupInfopediaWord(word, BILINGUAL[languageCode]);
-}
-
-export async function lookupInfopediaMonolingual(
-  word: string,
-  languageCode: keyof typeof MONOLINGUAL,
-): Promise<DictionarySourceResult> {
-  if (languageCode === "en") {
-    return lookupInfopediaEnglish(word);
-  }
-
-  return lookupInfopediaWord(word, MONOLINGUAL[languageCode]);
-}
-
-export function buildInfopediaUnavailableEnglishSection() {
-  return buildFallbackSection(
-    "Inglês-Português",
-    "Não consegui extrair o verbete inglês-português nesta tentativa.",
-  );
 }

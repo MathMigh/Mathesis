@@ -66,34 +66,31 @@ export function noteGeminiHttpFailure(
 }
 
 export function buildGeminiUnavailableNote(
-  kind: "etimologia" | "gramatica" | "transcricao",
+  kind: "etimologia" | "gramatica",
   state: GeminiFailureState,
 ) {
   const labels = {
-    etimologia: "A an\u00e1lise etimol\u00f3gica por IA",
-    gramatica: "A an\u00e1lise gramatical por IA",
-    transcricao: "A transcri\u00e7\u00e3o por IA",
+    etimologia: "A análise etimológica por IA",
+    gramatica: "A análise gramatical por IA",
   } as const;
 
   const label = labels[kind];
 
   if (state.quotaLimited) {
-    return `${label} esgotou momentaneamente o pool de chaves dispon\u00edvel.`;
+    return `${label} esgotou momentaneamente o pool de chaves disponível.`;
   }
 
   if (state.serviceUnavailable) {
-    return `${label} encontrou o servi\u00e7o do Gemini sob alta demanda nesta tentativa.`;
+    return `${label} encontrou o serviço do Gemini sob alta demanda nesta tentativa.`;
   }
 
   if (state.authFailed) {
-    return `${label} encontrou um problema de autentica\u00e7\u00e3o no pool configurado.`;
+    return `${label} encontrou um problema de autenticação no pool configurado.`;
   }
 
   if (state.badRequest) {
-    return `${label} n\u00e3o respondeu de forma aproveit\u00e1vel nesta consulta.`;
+    return `${label} não respondeu de forma aproveitável nesta consulta.`;
   }
 
-  return kind === "transcricao"
-    ? "N\u00e3o consegui transcrever este \u00e1udio nesta tentativa."
-    : `${label} n\u00e3o respondeu nesta consulta.`;
+  return `${label} não respondeu nesta consulta.`;
 }

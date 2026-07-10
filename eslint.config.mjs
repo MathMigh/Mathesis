@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "work/**",
     "tmp/**",
     "node_modules/**",
+    "public/pdf.worker.min.mjs",
     "public/validation/**",
     "next-env.d.ts",
     "tmp_*.js",

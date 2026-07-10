@@ -24,6 +24,20 @@ const AI_BACKED_SOURCE_IDS = new Set<DictionarySourceId>([
   "imagens",
 ]);
 
+function jsonResponse(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+) {
+  return NextResponse.json(body, {
+    headers: {
+      ...LOOKUP_CACHE_HEADERS,
+      ...headers,
+    },
+    status,
+  });
+}
+
 function buildSafeLookupContext(searchParams: URLSearchParams): LookupContext {
   const language = sanitizeHeaderValue(searchParams.get("documentLanguage"), 24);
 
@@ -44,9 +58,9 @@ export async function GET(request: Request) {
   const context = buildSafeLookupContext(searchParams);
 
   if (!rawWord) {
-    return NextResponse.json(
+    return jsonResponse(
       { message: "Informe uma palavra para consultar." },
-      { status: 400 },
+      400,
     );
   }
 
@@ -54,13 +68,13 @@ export async function GET(request: Request) {
     rawSource === "wikipedia";
 
   if (!(allowsPhrase ? VALID_LOOKUP_PHRASE.test(rawWord) : VALID_WORD.test(rawWord))) {
-    return NextResponse.json(
+    return jsonResponse(
       {
         message: allowsPhrase
           ? "A consulta da Wikipedia aceita uma palavra ou um nome curto."
           : "A consulta aceita apenas uma unica palavra.",
       },
-      { status: 400 },
+      400,
     );
   }
 
@@ -80,23 +94,18 @@ export async function GET(request: Request) {
     );
 
     if (!rateLimit.allowed) {
-      return NextResponse.json(
+      return jsonResponse(
         { message: "Muitas consultas em pouco tempo. Tente novamente em instantes." },
-        {
-          headers: {
-            ...LOOKUP_CACHE_HEADERS,
-            "Retry-After": String(rateLimit.retryAfterSeconds),
-          },
-          status: 429,
-        },
+        429,
+        { "Retry-After": String(rateLimit.retryAfterSeconds) },
       );
     }
 
     if (rawSource) {
       if (!(LOOKUP_SOURCE_IDS as readonly string[]).includes(rawSource)) {
-        return NextResponse.json(
+        return jsonResponse(
           { message: "Fonte de consulta invalida." },
-          { status: 400 },
+          400,
         );
       }
 
@@ -108,22 +117,16 @@ export async function GET(request: Request) {
         context,
       );
 
-      return NextResponse.json(sourcePayload, {
-        headers: LOOKUP_CACHE_HEADERS,
-      });
+      return jsonResponse(sourcePayload);
     }
 
     const payload = await lookupAllSources(rawWord, context);
 
-    return NextResponse.json(payload, {
-      headers: LOOKUP_CACHE_HEADERS,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Nao foi possivel consultar os dicionarios.";
-
-    return NextResponse.json({ message }, { status: 502 });
+    return jsonResponse(payload);
+  } catch {
+    return jsonResponse(
+      { message: "Nao foi possivel consultar os dicionarios agora." },
+      502,
+    );
   }
 }

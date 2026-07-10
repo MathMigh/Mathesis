@@ -232,7 +232,7 @@ function shouldKeepWikipediaOriginal(
     return true;
   }
 
-  return /\b(?:en|eng|english|ingles|inglesa|ingl[Ãªe]s)\b/iu.test(
+  return /\b(?:en|eng|english|ingles|inglesa|ingl[êe]s)\b/iu.test(
     context?.documentLanguage ?? "",
   );
 }
@@ -572,10 +572,7 @@ export async function lookupWikipedia(
       [buildSection(headingLine)],
       match.summary.content_urls?.desktop?.page ?? null,
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown error";
-    console.warn(`WIKIPEDIA_LOOKUP_FAIL detail=${message.slice(0, 160)}`);
-
+  } catch {
     return buildResult(
       requestedWord,
       "unavailable",

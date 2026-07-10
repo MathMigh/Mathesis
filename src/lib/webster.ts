@@ -83,7 +83,8 @@ function buildWebsterSection(rawHtml: string, requestedWord: string) {
 
   const result = $(".result").first();
   const content = result.find(".result-content").first();
-  const title = dedupeHeadword(result.find(".result-title").first().text()) || requestedWord;
+  const title =
+    dedupeHeadword(result.find(".result-title").first().text()) || requestedWord;
 
   if (!content.length) {
     return null;
@@ -131,11 +132,16 @@ function buildWebsterSection(rawHtml: string, requestedWord: string) {
   const entryHeading = dedupeHeadword(first.heading || title || requestedWord);
   const entryPos = first.partOfSpeech;
   const entryEtymology = first.etymology
-    .replace(new RegExp(`^${entryHeading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}\\.?`, "iu"), "")
+    .replace(
+      new RegExp(
+        `^${entryHeading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}\\.?`,
+        "iu",
+      ),
+      "",
+    )
     .trim();
 
   const htmlParts = [`<article class="lookupEntry lookupEntry--webster">`];
-  htmlParts.push(`<p class="lookupEntryTitle">${escapeHtml(entryHeading)}</p>`);
 
   if (entryPos) {
     htmlParts.push(`<p class="lookupEntryMeta">${escapeHtml(entryPos)}</p>`);
@@ -183,7 +189,7 @@ function buildWebsterSection(rawHtml: string, requestedWord: string) {
     }
   }
 
-  htmlParts.push(`</article>`);
+  htmlParts.push("</article>");
 
   return {
     canonicalWord: entryHeading,

@@ -9,10 +9,7 @@ import { lookupGrammarLocal } from "./grammar-local";
 import { lookupImages } from "./images";
 import { normalizeInlineText } from "./dictionary-utils";
 import {
-  lookupInfopediaBilingual,
   lookupInfopediaEnPt,
-  lookupInfopediaEnglish,
-  lookupInfopediaMonolingual,
 } from "./infopedia-enpt-clean";
 import { lookupInfopedia } from "./infopedia";
 import { lookupJohnson } from "./johnson";
@@ -21,16 +18,13 @@ import { lookupLogeion } from "./logeion";
 import { lookupMitologico } from "./mitologico";
 import {
   createUnavailableSource,
-  LOOKUP_SOURCE_IDS,
 } from "./lookup-source-config";
 import {
   readPersistentLookupCache,
   writePersistentLookupCache,
 } from "./persistent-lookup-cache";
 import { lookupPriberam } from "./priberam";
-import { lookupPorto } from "./porto";
 import { lookupLatinTables } from "./latin-tables";
-import { lookupTreccani } from "./treccani";
 import { lookupWikipedia } from "./wikipedia";
 import { lookupWebster } from "./webster";
 import { lookupWiktionary } from "./wiktionary";
@@ -48,29 +42,18 @@ const SOURCE_CACHE_VERSION_BY_SOURCE: Partial<Record<DictionarySourceId, string>
   aulete: "2026-06-23-aulete-canonical-guard-v2",
   etimologia: "2026-07-04-etymology-language-aware-v1",
   faria: "2026-06-27-faria-v2",
-  porto: "2026-07-01-porto-v14",
   tabelas: "2026-07-02-tabelas-latinas-v10",
-  gramatica: "2026-07-07-gramatica-pt-clean-copy-v32",
-  infopedia: "2026-07-09-infopedia-pt-related-v1",
+  gramatica: "2026-07-10-gramatica-display-refresh-v33",
+  infopedia: "2026-07-10-infopedia-pt-related-v2",
   logeion: "2026-07-09-logeion-rich-html-v11",
   mitologico: "2026-07-06-mitologico-en-stopwords-v9",
   wikipedia: "2026-07-06-wikipedia-v8",
-  imagens: "2026-07-07-images-proxy-all-v9",
+  imagens: "2026-07-10-images-proxy-fallback-v10",
   johnson: "2026-07-07-johnson-structured-v6",
-  webster: "2026-07-07-webster-structured-v7",
-  wiktionary: "2026-07-07-wiktionary-structured-v11",
+  webster: "2026-07-10-webster-headword-clean-v8",
+  wiktionary: "2026-07-10-wiktionary-retry-v12",
   english_analogico: "2026-07-06-english-analogico-v2",
-  infopedia_dept: "2026-07-04-infopedia-dept-v1",
-  infopedia_de: "2026-07-04-infopedia-de-v1",
-  infopedia_en: "2026-07-07-infopedia-en-clean-headword-v11",
-  infopedia_enpt: "2026-07-07-infopedia-enpt-clean-headword-v11",
-  infopedia_espt: "2026-07-04-infopedia-espt-v1",
-  infopedia_es: "2026-07-04-infopedia-es-v1",
-  infopedia_frpt: "2026-07-04-infopedia-frpt-v1",
-  infopedia_fr: "2026-07-04-infopedia-fr-v1",
-  infopedia_itpt: "2026-07-04-infopedia-itpt-v1",
-  infopedia_it: "2026-07-04-infopedia-it-v1",
-  treccani: "2026-07-04-treccani-v1",
+  infopedia_enpt: "2026-07-10-infopedia-enpt-headword-v12",
   corpus: "2026-07-09-corpus-classical-highlight-v14",
   analogico: "2026-06-20-analogia-label-v4",
 };
@@ -84,23 +67,12 @@ const SOURCE_LOOKUPS: Record<
   corpus: lookupClassicCorpus,
   etimologia: lookupEtymologyAi,
   faria: lookupFaria,
-  porto: lookupPorto,
   tabelas: lookupLatinTables,
   gramatica: lookupGrammarLocal,
   imagens: lookupImages,
-  infopedia_dept: (word) => lookupInfopediaBilingual(word, "de"),
-  infopedia_de: (word) => lookupInfopediaMonolingual(word, "de"),
-  infopedia_en: lookupInfopediaEnglish,
   infopedia_enpt: lookupInfopediaEnPt,
-  infopedia_espt: (word) => lookupInfopediaBilingual(word, "es"),
-  infopedia_es: (word) => lookupInfopediaMonolingual(word, "es"),
-  infopedia_frpt: (word) => lookupInfopediaBilingual(word, "fr"),
-  infopedia_fr: (word) => lookupInfopediaMonolingual(word, "fr"),
-  infopedia_itpt: (word) => lookupInfopediaBilingual(word, "it"),
-  infopedia_it: (word) => lookupInfopediaMonolingual(word, "it"),
   infopedia: lookupInfopedia,
   johnson: lookupJohnson,
-  treccani: lookupTreccani,
   english_analogico: lookupEnglishAnalogico,
   webster: lookupWebster,
   wiktionary: lookupWiktionary,
@@ -193,7 +165,6 @@ const CONTEXT_SENSITIVE_SOURCE_IDS = new Set<DictionarySourceId>([
   "gramatica",
   "imagens",
   "logeion",
-  "porto",
   "tabelas",
 ]);
 
@@ -207,20 +178,9 @@ const VOLATILE_MISS_SOURCE_IDS = new Set<DictionarySourceId>([
   "aulete",
   "faria",
   "priberam",
-  "porto",
   "infopedia",
-  "infopedia_dept",
-  "infopedia_de",
-  "infopedia_en",
   "infopedia_enpt",
-  "infopedia_espt",
-  "infopedia_es",
-  "infopedia_frpt",
-  "infopedia_fr",
-  "infopedia_itpt",
-  "infopedia_it",
   "johnson",
-  "treccani",
   "webster",
   "wiktionary",
   "logeion",

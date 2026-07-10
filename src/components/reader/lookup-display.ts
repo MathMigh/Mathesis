@@ -59,6 +59,10 @@ const LOOKUP_ALLOWED_ATTR = [
   "target",
 ] as const;
 
+function buildLookupProxyImageUrl(value: string) {
+  return `/api/image-proxy?src=${encodeURIComponent(value)}`;
+}
+
 function escapeHtmlText(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -162,7 +166,7 @@ function htmlFromDisplayMarkdown(value: string) {
       continue;
     }
 
-    const bulletMatch = /^(?:[-*•]|\d+[.)])\s+(.+)$/u.exec(line);
+    const bulletMatch = /^(?:[-*\u2022]|\d+[.)])\s+(.+)$/u.exec(line);
 
     if (bulletMatch) {
       flushParagraph();
@@ -190,6 +194,38 @@ function sanitizeEtymologySectionText(value: string) {
     .trim();
 }
 
+function basicSanitizeLookupHtml(value: string) {
+  const allowedTagsPattern = LOOKUP_ALLOWED_TAGS.join("|");
+
+  return value
+    .replace(
+      /<\s*(audio|canvas|form|iframe|input|object|script|style|textarea|video)\b[\s\S]*?<\s*\/\s*\1\s*>/giu,
+      "",
+    )
+    .replace(
+      /<\s*(audio|canvas|form|iframe|input|object|script|style|textarea|video)\b[^>]*\/?\s*>/giu,
+      "",
+    )
+    .replace(/\s+on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
+    .replace(/\s+style\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
+    .replace(
+      /\s+(href|src)\s*=\s*(["'])\s*(?:javascript:|vbscript:|data:text\/html|\/\/)[\s\S]*?\2/giu,
+      "",
+    )
+    .replace(
+      /<img\b(?:(?!>).)*\bsrc\s*=\s*(["'])(?!\/api\/image-proxy\?src=|data:image\/|blob:)[\s\S]*?\1(?:(?!>).)*>/giu,
+      "",
+    )
+    .replace(
+      new RegExp(
+        `<(?!/?(?:${allowedTagsPattern})(?:\\s|>|/))/?[^>]+>`,
+        "giu",
+      ),
+      "",
+    )
+    .trim();
+}
+
 export function getDisplaySourceLabel(source: DictionarySourceResult) {
   const repairedLabel = repairMojibake(source.label) ?? source.label;
 
@@ -205,26 +241,28 @@ export function getDisplaySourceLabel(source: DictionarySourceResult) {
 }
 
 function getDisplaySourceNote(source: DictionarySourceResult) {
-  const repairedNote = source.note ? repairMojibake(source.note) ?? source.note : source.note;
+  const repairedNote = source.note
+    ? repairMojibake(source.note) ?? source.note
+    : source.note;
 
   if (source.status === "found") {
     if (source.sourceId === "etimologia") {
-      return repairedNote ?? "Nota etimológica para apoiar a leitura.";
+      return repairedNote ?? "Nota etimol\u00f3gica para apoiar a leitura.";
     }
 
     if (source.sourceId === "gramatica") {
-      return "Verbete gramatical organizado a partir da Nova gramática do português contemporâneo, de Celso Cunha e Lindley Cintra.";
+      return "Verbete gramatical organizado a partir da Nova gram\u00e1tica do portugu\u00eas contempor\u00e2neo, de Celso Cunha e Lindley Cintra.";
     }
 
     if (source.sourceId === "wikipedia") {
-      return "Panorama enciclopédico da Wikipedia para apoiar a leitura.";
+      return "Panorama enciclop\u00e9dico da Wikipedia para apoiar a leitura.";
     }
 
     if (
       source.sourceId === "mitologico" &&
-      (!source.note || /^nota mitol[oó]gica gerada por ia/i.test(source.note))
+      (!source.note || /^nota mitol[o\u00f3]gica gerada por ia/i.test(source.note))
     ) {
-      return "Nota mitológica gerada por IA para apoiar a leitura.";
+      return "Nota mitol\u00f3gica gerada por IA para apoiar a leitura.";
     }
   }
 
@@ -249,20 +287,31 @@ function sanitizeLookupHtml(value: string | null) {
         : null;
 
   if (!sanitizable || typeof window === "undefined") {
-    return repaired;
+    return basicSanitizeLookupHtml(repaired);
   }
 
   const sanitize = sanitizable.sanitize;
 
   if (typeof sanitize !== "function") {
-    return repaired;
+    return basicSanitizeLookupHtml(repaired);
   }
 
   const sanitized = sanitize(repaired, {
     ALLOWED_ATTR: [...LOOKUP_ALLOWED_ATTR],
     ALLOWED_TAGS: [...LOOKUP_ALLOWED_TAGS],
     FORBID_ATTR: ["style"],
-    FORBID_TAGS: ["audio", "canvas", "form", "iframe", "input", "object", "script", "style", "textarea", "video"],
+    FORBID_TAGS: [
+      "audio",
+      "canvas",
+      "form",
+      "iframe",
+      "input",
+      "object",
+      "script",
+      "style",
+      "textarea",
+      "video",
+    ],
     USE_PROFILES: { html: true },
   });
   const template = window.document.createElement("template");
@@ -273,9 +322,13 @@ function sanitizeLookupHtml(value: string | null) {
 
     if (!/^(?:https?:|\/|#)/iu.test(href)) {
       anchor.removeAttribute("href");
+      anchor.removeAttribute("target");
+      anchor.removeAttribute("rel");
+      return;
     }
 
-    if (anchor.getAttribute("target") === "_blank") {
+    if (/^https?:/iu.test(href) || anchor.getAttribute("target") === "_blank") {
+      anchor.setAttribute("target", "_blank");
       anchor.setAttribute("rel", "noreferrer noopener");
     }
   });
@@ -283,7 +336,9 @@ function sanitizeLookupHtml(value: string | null) {
   template.content.querySelectorAll("img[src]").forEach((image) => {
     const src = image.getAttribute("src")?.trim() ?? "";
 
-    if (!/^(?:https?:|\/api\/image-proxy\?src=|data:image\/)/iu.test(src)) {
+    if (/^https?:/iu.test(src)) {
+      image.setAttribute("src", buildLookupProxyImageUrl(src));
+    } else if (!/^(?:\/api\/image-proxy\?src=|data:image\/|blob:)/iu.test(src)) {
       image.remove();
       return;
     }
@@ -298,8 +353,12 @@ function sanitizeLookupHtml(value: string | null) {
 function getDisplaySections(source: DictionarySourceResult) {
   return source.sections.map((section) => {
     const repairedLabel = repairMojibake(section.label) ?? section.label;
-    const repairedText = section.text ? repairMojibake(section.text) ?? section.text : section.text;
-    const repairedHtml = section.html ? repairMojibake(section.html) ?? section.html : section.html;
+    const repairedText = section.text
+      ? repairMojibake(section.text) ?? section.text
+      : section.text;
+    const repairedHtml = section.html
+      ? repairMojibake(section.html) ?? section.html
+      : section.html;
 
     if (source.sourceId === "etimologia" && repairedText) {
       const text = sanitizeEtymologySectionText(repairedText);
@@ -324,7 +383,10 @@ function getDisplaySections(source: DictionarySourceResult) {
     }
 
     if (source.sourceId === "tabelas" && repairedText) {
-      const text = cleanDisplayMarkdown(repairedText).replace(/\*\*([^\n]+?)\*\*/gu, "$1");
+      const text = cleanDisplayMarkdown(repairedText).replace(
+        /\*\*([^\n]+?)\*\*/gu,
+        "$1",
+      );
 
       return {
         ...section,
@@ -337,7 +399,8 @@ function getDisplaySections(source: DictionarySourceResult) {
     return {
       ...section,
       html: sanitizeLookupHtml(
-        repairedHtml ?? (repairedText ? htmlFromDisplayMarkdown(repairedText) : section.html),
+        repairedHtml ??
+          (repairedText ? htmlFromDisplayMarkdown(repairedText) : section.html),
       ),
       label: repairedLabel,
       text: repairedText ?? section.text,
@@ -365,7 +428,7 @@ export function getDisplayPayload(payload: LookupPayload): LookupPayload {
 
 export function sourceStatusLabel(status: DictionarySourceResult["status"]) {
   if (status === "found") {
-    return "Disponível";
+    return "Dispon\u00edvel";
   }
 
   if (status === "loading") {
@@ -376,7 +439,7 @@ export function sourceStatusLabel(status: DictionarySourceResult["status"]) {
     return "Sem verbete";
   }
 
-  return "Indisponível";
+  return "Indispon\u00edvel";
 }
 
 export function getVisibleSections(source: DictionarySourceResult) {
@@ -385,7 +448,10 @@ export function getVisibleSections(source: DictionarySourceResult) {
   );
 }
 
-export function buildSectionKey(sourceId: DictionarySourceId, sectionLabel: string) {
+export function buildSectionKey(
+  sourceId: DictionarySourceId,
+  sectionLabel: string,
+) {
   return `${sourceId}:${sectionLabel}`;
 }
 
@@ -425,7 +491,10 @@ export function getLookupSourceIds(word: string, context?: LookupContext) {
   return getLookupSourceIdsForWord(word, context);
 }
 
-export function buildLoadingPayload(word: string, context?: LookupContext): LookupPayload {
+export function buildLoadingPayload(
+  word: string,
+  context?: LookupContext,
+): LookupPayload {
   return {
     displayWord: word,
     requestedWord: word,

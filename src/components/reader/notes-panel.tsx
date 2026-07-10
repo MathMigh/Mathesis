@@ -1,10 +1,8 @@
-"use client";
-
 import styles from "../pdf-reader-app.module.css";
 
 type NotesPanelProps = {
   notes: string;
-  onChange: (notes: string) => void;
+  onChange: (value: string) => void;
   onExportDocx: () => void;
   onExportPdf: () => void;
   onExportText: () => void;
@@ -17,29 +15,29 @@ export function NotesPanel({
   onExportPdf,
   onExportText,
 }: NotesPanelProps) {
-  const hasNotes = Boolean(notes.trim());
-
   return (
-    <section className={styles.notesPanel}>
-      <div className={styles.notesHeader}>
-        <h2>Anotações</h2>
+    <section className={styles.notesPanel} aria-labelledby="reader-notes-title">
+      <header className={styles.notesHeader}>
+        <h2 id="reader-notes-title">Anotações</h2>
         <div className={styles.notesActions}>
-          <button disabled={!hasNotes} onClick={onExportText} type="button">
+          <button type="button" onClick={onExportText}>
             TXT
           </button>
-          <button disabled={!hasNotes} onClick={onExportDocx} type="button">
+          <button type="button" onClick={onExportDocx}>
             DOCX
           </button>
-          <button disabled={!hasNotes} onClick={onExportPdf} type="button">
+          <button type="button" onClick={onExportPdf}>
             PDF
           </button>
         </div>
-      </div>
+      </header>
+
       <textarea
-        aria-label="Anotações de leitura"
+        aria-label="Anotações do leitor"
         className={styles.notesTextarea}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Não se preocupe: suas notas ficam salvas aqui."
+        spellCheck
         value={notes}
       />
     </section>

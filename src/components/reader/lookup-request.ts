@@ -18,16 +18,7 @@ export const SEARCHABLE_INLINE_SOURCE_IDS = new Set<DictionarySourceId>([
   "aulete",
   "priberam",
   "infopedia",
-  "infopedia_de",
-  "infopedia_dept",
-  "infopedia_en",
   "infopedia_enpt",
-  "infopedia_es",
-  "infopedia_espt",
-  "infopedia_fr",
-  "infopedia_frpt",
-  "infopedia_it",
-  "infopedia_itpt",
   "etimologia",
   "gramatica",
   "analogico",
@@ -38,7 +29,6 @@ export const SEARCHABLE_INLINE_SOURCE_IDS = new Set<DictionarySourceId>([
   "webster",
   "wiktionary",
   "english_analogico",
-  "treccani",
   "logeion",
   "faria",
 ]);
@@ -101,39 +91,24 @@ export function seedInlineSourceState(payload: LookupPayload, seedWord: string) 
 }
 
 function getSourceTimeoutMs(sourceId: DictionarySourceId) {
-  if (sourceId === "corpus") {
-    return 60000;
+  switch (sourceId) {
+    case "corpus":
+      return 25000;
+    case "etimologia":
+    case "gramatica":
+      return 22000;
+    case "mitologico":
+    case "infopedia":
+    case "infopedia_enpt":
+    case "imagens":
+      return 18000;
+    case "wikipedia":
+      return 12000;
+    case "analogico":
+      return 18000;
+    default:
+      return 16000;
   }
-
-  if (sourceId === "analogico") {
-    return 25000;
-  }
-
-  if (sourceId === "mitologico") {
-    return 45000;
-  }
-
-  if (sourceId === "wikipedia") {
-    return 15000;
-  }
-
-  if (sourceId === "infopedia") {
-    return 45000;
-  }
-
-  if (sourceId === "imagens") {
-    return 45000;
-  }
-
-  if (sourceId === "etimologia") {
-    return 60000;
-  }
-
-  if (sourceId === "gramatica") {
-    return 60000;
-  }
-
-  return 25000;
 }
 
 export async function fetchLookupSourceResult(
@@ -161,29 +136,19 @@ export async function fetchLookupSourceResult(
       sourceId === "webster" ||
       sourceId === "wiktionary" ||
       sourceId === "english_analogico" ||
-      sourceId === "infopedia_de" ||
-      sourceId === "infopedia_dept" ||
-      sourceId === "infopedia_en" ||
       sourceId === "infopedia_enpt" ||
-      sourceId === "infopedia_es" ||
-      sourceId === "infopedia_espt" ||
-      sourceId === "infopedia_fr" ||
-      sourceId === "infopedia_frpt" ||
-      sourceId === "infopedia_it" ||
-      sourceId === "infopedia_itpt" ||
-      sourceId === "treccani" ||
       sourceId === "gramatica" ||
       sourceId === "logeion" ||
       sourceId === "faria" ||
-      sourceId === "porto" ||
       sourceId === "tabelas" ||
       sourceId === "mitologico";
+
     const response = await fetch(
       `/api/lookup?${new URLSearchParams({
         word,
         source: sourceId,
         ...(sourceId === "analogico" ? { revision: "analogia-v12" } : {}),
-        ...(sourceId === "mitologico" ? { revision: "grimal-allowed-names-v40" } : {}),
+        ...(sourceId === "mitologico" ? { revision: "mitologia-v1" } : {}),
         ...(shouldSendDocumentContext && context.documentAuthor
           ? { documentAuthor: context.documentAuthor }
           : {}),
@@ -213,7 +178,7 @@ export async function fetchLookupSourceResult(
       throw new Error(
         "message" in body && body.message
           ? body.message
-          : "Nao consegui consultar esta fonte agora.",
+          : "Não consegui consultar esta fonte agora.",
       );
     }
 
@@ -224,7 +189,9 @@ export async function fetchLookupSourceResult(
     }
 
     if (timeoutController.signal.aborted) {
-      throw new Error("Esta fonte demorou demais nesta consulta; tente de novo em instantes.");
+      throw new Error(
+        "Esta fonte demorou demais nesta consulta; tente de novo em instantes.",
+      );
     }
 
     throw error;

@@ -30,35 +30,6 @@ export function downloadBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-export function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.addEventListener("load", () => {
-      resolve(String(reader.result ?? ""));
-    });
-    reader.addEventListener("error", () => {
-      reject(reader.error ?? new Error("Não consegui ler a gravação."));
-    });
-    reader.readAsDataURL(blob);
-  });
-}
-
-export function getSupportedAudioMimeType() {
-  if (typeof MediaRecorder === "undefined") {
-    return "";
-  }
-
-  return (
-    [
-      "audio/webm;codecs=opus",
-      "audio/webm",
-      "audio/ogg;codecs=opus",
-      "audio/mp4",
-    ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? ""
-  );
-}
-
 function escapeXml(value: string) {
   return value
     .replaceAll("&", "&amp;")

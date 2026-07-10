@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { get, put } from "@vercel/blob";
 
 let blobCacheDisabled = false;
+const MAX_CACHE_VALUE_BYTES = 512_000;
 
 type RedisResponse<T> = {
   error?: string;
@@ -84,9 +85,15 @@ export async function readPersistentLookupCache<T>(key: string) {
 }
 
 export async function writePersistentLookupCache(key: string, value: unknown) {
+  const serialized = JSON.stringify(value);
+
+  if (Buffer.byteLength(serialized, "utf8") > MAX_CACHE_VALUE_BYTES) {
+    return;
+  }
+
   await Promise.allSettled([
-    writeBlobLookupCache(key, value),
-    redisCommand(["SET", key, JSON.stringify(value)]),
+    writeBlobLookupCache(key, serialized),
+    redisCommand(["SET", key, serialized]),
   ]);
 }
 
@@ -118,13 +125,13 @@ async function readBlobLookupCache<T>(key: string) {
   }
 }
 
-async function writeBlobLookupCache(key: string, value: unknown) {
+async function writeBlobLookupCache(key: string, serializedValue: string) {
   if (blobCacheDisabled) {
     return;
   }
 
   try {
-    await put(buildBlobPath(key), JSON.stringify(value), {
+    await put(buildBlobPath(key), serializedValue, {
       access: "private",
       addRandomSuffix: false,
       allowOverwrite: true,

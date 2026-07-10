@@ -157,7 +157,6 @@ async function fetchGeminiEtymology(
   const failureState = createGeminiFailureState();
 
   if (apiKeys.length === 0) {
-    console.warn("Mathesis etymology: Gemini API key is not available.");
     return { quotaLimited: false, serviceUnavailable: false, text: null };
   }
 
@@ -198,9 +197,6 @@ async function fetchGeminiEtymology(
           if (!response.ok) {
             const errorText = await response.text();
             noteGeminiHttpFailure(failureState, response.status, errorText);
-            console.warn(
-              `GEMINI_ETYM_FAIL status=${response.status} model=${model} version=${version} keySlot=${apiKeyIndex + 1}/${apiKeys.length} detail=${errorText.slice(0, 160)}`,
-            );
             continue;
           }
 
@@ -219,9 +215,6 @@ async function fetchGeminiEtymology(
           if (/503|high demand|service unavailable|temporarily unavailable/iu.test(message)) {
             failureState.serviceUnavailable = true;
           }
-          console.warn(
-            `GEMINI_ETYM_FAIL model=${model} version=${version} keySlot=${apiKeyIndex + 1}/${apiKeys.length} detail=${message.slice(0, 160)}`,
-          );
           continue;
         }
       }

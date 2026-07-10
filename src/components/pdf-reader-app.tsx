@@ -93,10 +93,8 @@ import {
   type SourceSearchUpdater,
 } from "./reader/source-search-state";
 import {
-  blobToDataUrl,
   createDocxBlob,
   downloadBlob,
-  getSupportedAudioMimeType,
   resolveInitialNotes,
   sanitizeFileStem,
 } from "./reader/notes-export";
@@ -106,15 +104,13 @@ import { ReaderSidebar } from "./reader/reader-sidebar";
 import { ReaderToolbar } from "./reader/reader-toolbar";
 import styles from "./pdf-reader-app.module.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 const THEME_STORAGE_KEY = "pdf-reader-theme";
 const NOTES_STORAGE_KEY = "mathesis-reader-notes";
 const READER_SCROLL_PERSIST_INTERVAL_MS = 350;
 
 type ReaderTheme = "day" | "night";
-type AudioRecorderStatus = "idle" | "recording" | "ready" | "transcribing" | "error";
-
 function resolveInitialTheme(): ReaderTheme {
   if (typeof window === "undefined") {
     return "day";
@@ -319,10 +315,6 @@ export default function PdfReaderApp() {
   const [readerNotes, setReaderNotes] = useState(() =>
     resolveInitialNotes(NOTES_STORAGE_KEY),
   );
-  const [audioStatus, setAudioStatus] = useState<AudioRecorderStatus>("idle");
-  const [audioMessage, setAudioMessage] = useState("");
-  const [audioTranscript, setAudioTranscript] = useState("");
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [manualLookupWord, setManualLookupWord] = useState("");
   const [manualLookupLanguage, setManualLookupLanguage] =
     useState<LookupLanguage>("portuguese");
@@ -351,12 +343,6 @@ export default function PdfReaderApp() {
   const [restoringSession, setRestoringSession] = useState(true);
 
   const cacheRef = useRef<Map<string, LookupPayload>>(new Map());
-  const audioBlobRef = useRef<Blob | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const audioObjectUrlRef = useRef<string | null>(null);
-  const audioRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  const shouldAutoTranscribeRef = useRef(false);
   const documentDisposeRef = useRef<(() => void) | null>(null);
   const documentRequestRef = useRef(0);
   const pendingLookupRef = useRef<AbortController | null>(null);
@@ -481,9 +467,20 @@ export default function PdfReaderApp() {
 
   function openManualLookup() {
     const initialWord = tooltip?.word ?? "";
-    const initialLanguage = detectLookupLanguage(initialWord || "amor", {
-      documentLanguage: documentState?.meta.language,
-    });
+    const preferredDocumentLanguage =
+      tooltip?.contextOverrides?.documentLanguage === "english" ||
+      tooltip?.contextOverrides?.documentLanguage === "latin" ||
+      tooltip?.contextOverrides?.documentLanguage === "portuguese"
+        ? tooltip.contextOverrides.documentLanguage
+        : documentState?.meta.language;
+    const initialLanguage =
+      preferredDocumentLanguage === "english" ||
+      preferredDocumentLanguage === "latin" ||
+      preferredDocumentLanguage === "portuguese"
+        ? preferredDocumentLanguage
+        : detectLookupLanguage(initialWord || "amor", {
+            documentLanguage: documentState?.meta.language,
+          });
     const payload = getDisplayPayload(buildManualEmptyPayload(initialLanguage));
 
     setManualLookupWord(initialWord);
@@ -543,147 +540,6 @@ export default function PdfReaderApp() {
   function releaseLoadedDocument() {
     documentDisposeRef.current?.();
     documentDisposeRef.current = null;
-  }
-
-  function stopAudioStream() {
-    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
-    audioStreamRef.current = null;
-  }
-
-  function setRecordedAudioBlob(blob: Blob) {
-    if (audioObjectUrlRef.current) {
-      URL.revokeObjectURL(audioObjectUrlRef.current);
-    }
-
-    audioBlobRef.current = blob;
-    audioObjectUrlRef.current = URL.createObjectURL(blob);
-    setAudioUrl(audioObjectUrlRef.current);
-  }
-
-  async function startAudioRecording() {
-    if (
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === "undefined"
-    ) {
-      setAudioStatus("error");
-      setAudioMessage("Este navegador não liberou gravação de áudio aqui.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const preferredMimeType = getSupportedAudioMimeType();
-      const recorder = new MediaRecorder(
-        stream,
-        preferredMimeType ? { mimeType: preferredMimeType } : undefined,
-      );
-
-      audioChunksRef.current = [];
-      audioStreamRef.current = stream;
-      audioRecorderRef.current = recorder;
-      shouldAutoTranscribeRef.current = true;
-      setAudioTranscript("");
-
-      recorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      });
-
-      recorder.addEventListener("stop", () => {
-        const mimeType = recorder.mimeType || "audio/webm";
-        const chunks = audioChunksRef.current;
-
-        stopAudioStream();
-        audioRecorderRef.current = null;
-
-        if (chunks.length === 0) {
-          setAudioStatus("error");
-          setAudioMessage("A gravação terminou vazia. Tente novamente.");
-          return;
-        }
-
-        const nextBlob = new Blob(chunks, { type: mimeType });
-
-        setRecordedAudioBlob(nextBlob);
-        setAudioStatus("ready");
-        setAudioMessage("Gravação pronta. Você pode ouvir ou transcrever.");
-
-        if (shouldAutoTranscribeRef.current) {
-          void transcribeAudioBlob(nextBlob);
-        }
-      });
-
-      recorder.start();
-      setAudioStatus("recording");
-      setAudioMessage("Gravando... fale com calma; eu cuido do resto.");
-    } catch {
-      stopAudioStream();
-      setAudioStatus("error");
-      setAudioMessage("Não consegui acessar o microfone neste navegador.");
-    }
-  }
-
-  function stopAudioRecording() {
-    const recorder = audioRecorderRef.current;
-
-    if (!recorder || recorder.state === "inactive") {
-      return;
-    }
-
-    recorder.stop();
-    setAudioMessage("Finalizando a gravação...");
-  }
-
-  async function transcribeAudioBlob(blob: Blob) {
-    setAudioStatus("transcribing");
-    setAudioMessage("Transcrevendo...");
-
-    try {
-      const dataUrl = await blobToDataUrl(blob);
-      const response = await fetch("/api/transcribe", {
-        body: JSON.stringify({
-          audioBase64: dataUrl,
-          mimeType: blob.type || "audio/webm",
-        }),
-        cache: "no-store",
-        headers: {
-          "content-type": "application/json",
-        },
-        method: "POST",
-      });
-      const payload = (await response.json()) as { message?: string; text?: string };
-
-      if (!response.ok || !payload.text?.trim()) {
-        throw new Error(payload.message ?? "A transcrição voltou vazia.");
-      }
-
-      const transcript = payload.text.trim();
-
-      setAudioTranscript(transcript);
-      setReaderNotes((current) => {
-        const prefix = current.trimEnd();
-        return prefix ? `${prefix}\n\n${transcript}` : transcript;
-      });
-      setAudioStatus("ready");
-      setAudioMessage("Transcrição adicionada às anotações.");
-    } catch (error) {
-      setAudioStatus("error");
-      setAudioMessage(
-        error instanceof Error
-          ? error.message
-          : "Não consegui transcrever este áudio agora.",
-      );
-    }
-  }
-
-  function handleNotesMicrophoneClick() {
-    if (audioStatus === "recording") {
-      stopAudioRecording();
-      return;
-    }
-
-    void startAudioRecording();
   }
 
   async function ingestFile(
@@ -893,10 +749,20 @@ export default function PdfReaderApp() {
       const sourceResults = new Map<DictionarySourceId, DictionarySourceResult>(
         nextPayload.sources.map((source) => [source.sourceId, source]),
       );
-      const priorityLimit =
-        sourceIds.length <= 4 && sourceIds.includes("corpus") ? 2 : 3;
-      const prioritySourceIds = sourceIds.slice(0, priorityLimit);
-      const deferredSourceIds = sourceIds.slice(prioritySourceIds.length);
+      const deferredSourceIds: DictionarySourceId[] = sourceIds.filter((sourceId) =>
+        sourceId === "corpus" || sourceId === "imagens",
+      );
+      const prioritySourceIds = sourceIds.filter(
+        (sourceId) => !deferredSourceIds.includes(sourceId),
+      );
+      const initialSourceIds =
+        prioritySourceIds.length > 0
+          ? prioritySourceIds
+          : sourceIds.slice(0, Math.min(sourceIds.length, 1));
+      const backgroundSourceIds =
+        prioritySourceIds.length > 0
+          ? deferredSourceIds
+          : sourceIds.slice(initialSourceIds.length);
       const applySourceResult = (nextSource: DictionarySourceResult) => {
         sourceResults.set(nextSource.sourceId, nextSource);
         nextPayload = {
@@ -983,12 +849,12 @@ export default function PdfReaderApp() {
         });
       };
 
-      const priorityBatch = fetchSourceBatch(prioritySourceIds);
+      const priorityBatch = fetchSourceBatch(initialSourceIds);
 
       await Promise.race([
         priorityBatch,
         new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 900);
+          window.setTimeout(resolve, 650);
         }),
       ]);
 
@@ -996,7 +862,7 @@ export default function PdfReaderApp() {
         return;
       }
 
-      if (deferredSourceIds.length === 0) {
+      if (backgroundSourceIds.length === 0) {
         await priorityBatch;
 
         if (controller.signal.aborted) {
@@ -1012,7 +878,7 @@ export default function PdfReaderApp() {
       void (async () => {
         await Promise.allSettled([
           priorityBatch,
-          fetchSourceBatch(deferredSourceIds),
+          fetchSourceBatch(backgroundSourceIds),
         ]);
 
         if (controller.signal.aborted) {
@@ -1026,7 +892,6 @@ export default function PdfReaderApp() {
         return;
       }
 
-      console.error("lookup failed", error);
       setTooltip((current) => {
         if (!current || current.word !== word) {
           return current;
@@ -1476,17 +1341,6 @@ export default function PdfReaderApp() {
       if (persistReaderStateTimeoutRef.current) {
         window.clearTimeout(persistReaderStateTimeoutRef.current);
       }
-      shouldAutoTranscribeRef.current = false;
-
-      if (audioRecorderRef.current?.state !== "inactive") {
-        audioRecorderRef.current?.stop();
-      }
-
-      stopAudioStream();
-
-      if (audioObjectUrlRef.current) {
-        URL.revokeObjectURL(audioObjectUrlRef.current);
-      }
     };
   }, []);
 
@@ -1511,7 +1365,6 @@ export default function PdfReaderApp() {
     if (
       activeSource?.sourceId === "johnson" ||
       activeSource?.sourceId === "webster" ||
-      activeSource?.sourceId === "infopedia_en" ||
       activeSource?.sourceId === "infopedia_enpt" ||
       activeSource?.sourceId === "english_analogico" ||
       activeSource?.sourceId === "wiktionary"
@@ -1530,19 +1383,35 @@ export default function PdfReaderApp() {
 
     return "Digite a palavra que deseja consultar";
   })();
-  const currentLookupLanguage =
-    (visibleSources.some((source) =>
-      ["faria", "johnson", "webster", "wiktionary", "infopedia_en", "infopedia_enpt", "english_analogico", "logeion", "tabelas"].includes(source.sourceId),
-    )
-      ? visibleSources.some((source) =>
-          ["johnson", "webster", "wiktionary", "infopedia_en", "infopedia_enpt", "english_analogico"].includes(source.sourceId),
+  const explicitLookupLanguage =
+    tooltip?.contextOverrides?.documentLanguage === "english" ||
+    tooltip?.contextOverrides?.documentLanguage === "latin" ||
+    tooltip?.contextOverrides?.documentLanguage === "portuguese"
+      ? tooltip.contextOverrides.documentLanguage
+      : null;
+  const sourceDerivedLookupLanguage = visibleSources.some((source) =>
+    ["johnson", "webster", "wiktionary", "infopedia_enpt", "english_analogico"].includes(
+      source.sourceId,
+    ),
+  )
+    ? "english"
+    : visibleSources.some((source) =>
+          ["faria", "logeion", "tabelas"].includes(source.sourceId),
         )
-        ? "english"
-        : "latin"
-      : tooltip?.word
-        ? detectLookupLanguage(tooltip.word, tooltip.contextOverrides)
-        : tooltip?.contextOverrides?.documentLanguage) ??
-    tooltip?.contextOverrides?.documentLanguage;
+      ? "latin"
+      : null;
+  const inferredLookupLanguage = tooltip?.word
+    ? detectLookupLanguage(tooltip.word, {
+        ...tooltip.contextOverrides,
+        documentLanguage:
+          explicitLookupLanguage ?? tooltip?.contextOverrides?.documentLanguage,
+      })
+    : null;
+  const currentLookupLanguage =
+    explicitLookupLanguage ??
+    inferredLookupLanguage ??
+    sourceDerivedLookupLanguage ??
+    manualLookupLanguage;
   const isManualLookupPanel = Boolean(
     tooltip?.payload?.requestedWord === "" &&
       tooltip?.payload?.displayWord === "" &&

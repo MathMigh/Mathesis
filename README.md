@@ -39,8 +39,7 @@ most mechanical responsibilities have been moved into focused helpers under
   navigation helpers, and loading payloads.
 - `lookup-cache.ts`: browser lookup-cache policy and localStorage persistence.
 - `source-search-state.ts`: reducer for per-source search boxes.
-- `notes-export.ts`: note download, DOCX generation, audio blob helpers, and
-  notes bootstrap.
+- `notes-export.ts`: note download, DOCX generation, and notes bootstrap.
 
 ## Environment Variables
 
@@ -51,7 +50,6 @@ variables in production.
 AI_API_KEY=
 AI_API_KEYS=
 AI_MODEL=
-AI_TRANSCRIPTION_MODEL=
 AI_IMAGE_MODEL=
 GOOGLE_CSE_API_KEY=
 GOOGLE_CSE_ID=

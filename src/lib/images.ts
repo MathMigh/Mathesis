@@ -37,6 +37,26 @@ const GOOGLE_HEADERS = {
     "Mozilla/5.0 (compatible; Mathesis/0.1; +https://mathesis-app.vercel.app)",
 };
 
+const PROXYABLE_IMAGE_HOSTS = [
+  ".duckduckgo.com",
+  ".openverse.engineering",
+  ".openverse.org",
+  ".pexels.com",
+  ".pixabay.com",
+  ".unsplash.com",
+  ".wikimedia.org",
+  ".wikipedia.org",
+  "cdn.pixabay.com",
+  "duckduckgo.com",
+  "external-content.duckduckgo.com",
+  "images.openverse.engineering",
+  "images.pexels.com",
+  "images.unsplash.com",
+  "openverse.org",
+  "pixabay.com",
+  "plus.unsplash.com",
+].map((host) => host.toLocaleLowerCase("en-US"));
+
 type GeminiImagePart = {
   inlineData?: {
     data?: string;
@@ -665,7 +685,17 @@ function buildImageProxyUrl(url: string) {
       return url;
     }
 
-    return `/api/image-proxy?src=${encodeURIComponent(url)}`;
+    const normalizedHost = parsed.hostname.trim().toLocaleLowerCase("en-US");
+    const isProxyable = PROXYABLE_IMAGE_HOSTS.some((allowedHost) =>
+      allowedHost.startsWith(".")
+        ? normalizedHost === allowedHost.slice(1) ||
+          normalizedHost.endsWith(allowedHost)
+        : normalizedHost === allowedHost,
+    );
+
+    return isProxyable
+      ? `/api/image-proxy?src=${encodeURIComponent(url)}`
+      : url;
   } catch {
     return url;
   }

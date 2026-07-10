@@ -200,13 +200,14 @@ function sanitizeReaderHtml(value: string) {
   const basicSanitize = (dirty: string) =>
     dirty
       .replace(
-        /<\s*(audio|canvas|form|iframe|input|object|script|style|textarea|video)\b[\s\S]*?<\s*\/\s*\1\s*>/giu,
+        /<\s*(audio|base|canvas|form|iframe|input|link|meta|object|script|style|textarea|video)\b[\s\S]*?<\s*\/\s*\1\s*>/giu,
         "",
       )
       .replace(/\s+on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
       .replace(/\s+style\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu, "")
       .replace(/\s+(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/giu, "")
-      .replace(/\s+(href|src)\s*=\s*(["'])\s*data:text\/html[\s\S]*?\2/giu, "");
+      .replace(/\s+(href|src)\s*=\s*(["'])\s*data:text\/html[\s\S]*?\2/giu, "")
+      .replace(/\s+(href|src)\s*=\s*(["'])\s*\/\/[\s\S]*?\2/giu, "");
 
   if (!sanitizable || typeof window === "undefined") {
     return basicSanitize(value);
@@ -218,13 +219,16 @@ function sanitizeReaderHtml(value: string) {
     return value;
   }
 
-  return sanitize(basicSanitize(value), {
+  const sanitized = sanitize(basicSanitize(value), {
     FORBID_TAGS: [
       "audio",
+      "base",
       "canvas",
       "form",
       "iframe",
       "input",
+      "link",
+      "meta",
       "object",
       "script",
       "style",
@@ -234,6 +238,51 @@ function sanitizeReaderHtml(value: string) {
     FORBID_ATTR: ["style"],
     USE_PROFILES: { html: true },
   });
+
+  const template = window.document.createElement("template");
+  template.innerHTML = sanitized;
+
+  template.content.querySelectorAll("a[href]").forEach((anchor) => {
+    const href = anchor.getAttribute("href")?.trim() ?? "";
+
+    if (!href) {
+      anchor.removeAttribute("href");
+      return;
+    }
+
+    if (/^\s*\/\//u.test(href) || /^\s*(?:javascript:|data:)/iu.test(href)) {
+      anchor.removeAttribute("href");
+      anchor.removeAttribute("target");
+      anchor.removeAttribute("rel");
+      return;
+    }
+
+    if (/^https?:/iu.test(href)) {
+      anchor.setAttribute("target", "_blank");
+      anchor.setAttribute("rel", "noreferrer noopener");
+    }
+  });
+
+  template.content.querySelectorAll("img").forEach((image) => {
+    const src = image.getAttribute("src")?.trim() ?? "";
+    image.removeAttribute("srcset");
+
+    if (!src) {
+      image.remove();
+      return;
+    }
+
+    if (/^https?:/iu.test(src) || /^\s*\/\//u.test(src)) {
+      image.remove();
+      return;
+    }
+
+    if (!/^(?:data:image\/|blob:|#|[^:/?#][^?#]*)/iu.test(src)) {
+      image.remove();
+    }
+  });
+
+  return template.innerHTML;
 }
 
 function plainTextToHtml(rawText: string) {
