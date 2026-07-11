@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 
+const SCRIPT_SRC_DIRECTIVES = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(process.env.NODE_ENV === "development" ? ["'unsafe-eval'"] : []),
+].join(" ");
+
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -12,7 +18,7 @@ const CONTENT_SECURITY_POLICY = [
   "manifest-src 'self'",
   "media-src 'self' blob:",
   "object-src 'none'",
-  "script-src 'self'",
+  `script-src ${SCRIPT_SRC_DIRECTIVES}`,
   "style-src 'self' 'unsafe-inline'",
   "worker-src 'self' blob:",
 ].join("; ");
