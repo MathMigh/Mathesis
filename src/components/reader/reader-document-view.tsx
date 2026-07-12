@@ -1,13 +1,22 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { type RefObject } from "react";
-import { Document } from "react-pdf";
 
 import type { ReaderDocument, ReaderTocEntry } from "@/lib/local-reader-documents";
 
 import styles from "../pdf-reader-app.module.css";
-import { LazyPdfPage, PDF_EAGER_PAGE_COUNT } from "./lazy-pdf-page";
+
+const PdfDocumentStage = dynamic(
+  () => import("./pdf-document-stage").then((module) => module.PdfDocumentStage),
+  {
+    loading: () => (
+      <div className={styles.viewerLoading}>Carregando visualizador do PDF...</div>
+    ),
+    ssr: false,
+  },
+);
 
 type ReaderDocumentViewProps = {
   accept: string;
@@ -19,7 +28,6 @@ type ReaderDocumentViewProps = {
   isTocOpen: boolean;
   numPages: number;
   pageWidth: number;
-  restoringSession: boolean;
   viewerError: string | null;
   viewerSurfaceRef: RefObject<HTMLDivElement | null>;
   onDocumentEditorValueChange: (value: string) => void;
@@ -42,7 +50,6 @@ export function ReaderDocumentView({
   isTocOpen,
   numPages,
   pageWidth,
-  restoringSession,
   viewerError,
   viewerSurfaceRef,
   onDocumentEditorValueChange,
@@ -72,11 +79,11 @@ export function ReaderDocumentView({
       }}
       ref={viewerSurfaceRef}
     >
-      {documentLoadingLabel || restoringSession ? (
+      {documentLoadingLabel ? (
         <div className={styles.viewerLoading}>
           <div>
             <strong>Preparando a leitura.</strong>
-            <p>{documentLoadingLabel ?? "Restaurando seu arquivo anterior."}</p>
+            <p>{documentLoadingLabel}</p>
           </div>
         </div>
       ) : !documentState ? (
@@ -98,36 +105,15 @@ export function ReaderDocumentView({
           </label>
         </div>
       ) : documentState.kind === "pdf" ? (
-        <div className={styles.documentArea}>
-          <Document
-            error={
-              <div className={styles.viewerError}>
-                <div>
-                  <strong>Nao consegui abrir esse arquivo PDF.</strong>
-                  <p>
-                    Tente um arquivo com texto selecionavel ou verifique se ele nao
-                    esta protegido.
-                  </p>
-                </div>
-              </div>
-            }
-            file={documentState.file}
-            loading={<div className={styles.viewerLoading}>Carregando PDF...</div>}
-            onItemClick={({ pageNumber }) => onPdfItemClick(pageNumber)}
-            onLoadError={(error) => onPdfLoadError(error.message)}
-            onLoadSuccess={(pdf) => onPdfLoadSuccess(pdf.numPages)}
-          >
-            {Array.from({ length: numPages }, (_, index) => (
-              <LazyPdfPage
-                eager={index < PDF_EAGER_PAGE_COUNT}
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                rootRef={viewerSurfaceRef}
-                width={pageWidth}
-              />
-            ))}
-          </Document>
-        </div>
+        <PdfDocumentStage
+          documentState={documentState}
+          numPages={numPages}
+          onPdfItemClick={onPdfItemClick}
+          onPdfLoadError={onPdfLoadError}
+          onPdfLoadSuccess={onPdfLoadSuccess}
+          pageWidth={pageWidth}
+          viewerSurfaceRef={viewerSurfaceRef}
+        />
       ) : (
         <div className={styles.htmlDocumentShell}>
           {documentState.meta.title ||

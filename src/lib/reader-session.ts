@@ -2,7 +2,7 @@
 
 type ReaderSessionPosition =
   | { kind: "html"; scrollTop: number }
-  | { kind: "pdf"; pageNumber: number };
+  | { kind: "pdf"; scrollTop: number };
 
 type ReaderSessionState = {
   editedText?: string | null;
@@ -82,6 +82,59 @@ async function deleteValue(key: string) {
   });
 }
 
+function normalizeReaderSessionPosition(
+  position: unknown,
+): ReaderSessionPosition | null {
+  if (!position || typeof position !== "object") {
+    return null;
+  }
+
+  const candidate = position as {
+    kind?: unknown;
+    pageNumber?: unknown;
+    scrollTop?: unknown;
+  };
+
+  if (candidate.kind === "html" && Number.isFinite(candidate.scrollTop)) {
+    return {
+      kind: "html",
+      scrollTop: Number(candidate.scrollTop),
+    };
+  }
+
+  if (candidate.kind === "pdf") {
+    if (Number.isFinite(candidate.scrollTop)) {
+      return {
+        kind: "pdf",
+        scrollTop: Number(candidate.scrollTop),
+      };
+    }
+
+    if (Number.isFinite(candidate.pageNumber)) {
+      const legacyPageNumber = Math.max(1, Number(candidate.pageNumber));
+      return {
+        kind: "pdf",
+        scrollTop: Math.max(0, (legacyPageNumber - 1) * 1120),
+      };
+    }
+  }
+
+  return null;
+}
+
+function normalizeReaderSessionState(
+  state: ReaderSessionState | null,
+): ReaderSessionState | null {
+  if (!state) {
+    return null;
+  }
+
+  return {
+    editedText: state.editedText ?? null,
+    position: normalizeReaderSessionPosition(state.position),
+  };
+}
+
 export async function loadReaderSessionFile() {
   if (typeof window === "undefined" || !("indexedDB" in window)) {
     return null;
@@ -112,7 +165,8 @@ export async function loadReaderSessionState() {
     return null;
   }
 
-  return await readValue<ReaderSessionState>(STATE_KEY);
+  const state = await readValue<ReaderSessionState>(STATE_KEY);
+  return normalizeReaderSessionState(state);
 }
 
 export async function saveReaderSessionState(state: ReaderSessionState) {

@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Page } from "react-pdf";
 import styles from "../pdf-reader-app.module.css";
 
-const PDF_PAGE_ROOT_MARGIN = "700px 0px 900px 0px";
+const PDF_PAGE_ROOT_MARGIN = "420px 0px 540px 0px";
 
-export const PDF_EAGER_PAGE_COUNT = 2;
+export const PDF_EAGER_PAGE_COUNT = 1;
 
 type LazyPdfPageProps = {
   eager?: boolean;
@@ -65,6 +65,9 @@ export function LazyPdfPage({
     >
       {shouldRender ? (
         <Page
+          devicePixelRatio={
+            typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio || 1, 2)
+          }
           loading={
             <div
               className={styles.pdfPagePlaceholder}
@@ -74,7 +77,7 @@ export function LazyPdfPage({
             </div>
           }
           pageNumber={pageNumber}
-          renderAnnotationLayer
+          renderAnnotationLayer={false}
           renderTextLayer
           width={width}
         />

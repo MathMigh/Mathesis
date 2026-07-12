@@ -1,5 +1,3 @@
-import DOMPurify from "dompurify";
-
 type InternalHrefResolution = {
   chapterId: string;
   selector: string;
@@ -185,18 +183,7 @@ function toPlainTextSnippet(value: string | undefined | null) {
   return normalized || undefined;
 }
 
-function sanitizeReaderHtml(value: string) {
-  const purifyCandidate = DOMPurify as unknown as {
-    default?: { sanitize?: (dirty: string, config: object) => string };
-    sanitize?: (dirty: string, config: object) => string;
-  };
-  const sanitizable =
-    typeof purifyCandidate.sanitize === "function"
-      ? purifyCandidate
-      : typeof purifyCandidate.default?.sanitize === "function"
-        ? purifyCandidate.default
-        : null;
-
+async function sanitizeReaderHtml(value: string) {
   const basicSanitize = (dirty: string) =>
     dirty
       .replace(
@@ -209,7 +196,23 @@ function sanitizeReaderHtml(value: string) {
       .replace(/\s+(href|src)\s*=\s*(["'])\s*data:text\/html[\s\S]*?\2/giu, "")
       .replace(/\s+(href|src)\s*=\s*(["'])\s*\/\/[\s\S]*?\2/giu, "");
 
-  if (!sanitizable || typeof window === "undefined") {
+  if (typeof window === "undefined") {
+    return basicSanitize(value);
+  }
+
+  const domPurifyModule = (await import("dompurify")) as typeof import("dompurify");
+  const purifyCandidate = domPurifyModule as unknown as {
+    default?: { sanitize?: (dirty: string, config: object) => string };
+    sanitize?: (dirty: string, config: object) => string;
+  };
+  const sanitizable =
+    typeof purifyCandidate.sanitize === "function"
+      ? purifyCandidate
+      : typeof purifyCandidate.default?.sanitize === "function"
+        ? purifyCandidate.default
+        : null;
+
+  if (!sanitizable) {
     return basicSanitize(value);
   }
 
@@ -448,9 +451,10 @@ async function loadTxtDocument(
 
 async function loadHtmlDocument(file: File): Promise<ReaderDocumentLoadResult> {
   const rawHtml = await file.text();
+  const sanitizedHtml = await sanitizeReaderHtml(rawHtml);
 
   return {
-    document: buildHtmlDocument("html", file.name, sanitizeReaderHtml(rawHtml), {
+    document: buildHtmlDocument("html", file.name, sanitizedHtml, {
       description: "HTML local saneado para leitura dentro do app.",
       title: humanizeFileStem(file.name),
     }),
@@ -470,9 +474,10 @@ async function loadDocxDocument(file: File): Promise<ReaderDocumentLoadResult> {
   const warningMessages = result.messages
     .map((message) => message.message.trim())
     .filter(Boolean);
+  const sanitizedHtml = await sanitizeReaderHtml(result.value);
 
   return {
-    document: buildHtmlDocument("docx", file.name, sanitizeReaderHtml(result.value), {
+    document: buildHtmlDocument("docx", file.name, sanitizedHtml, {
       note:
         warningMessages.length > 0
           ? `Conversao DOCX com observacoes: ${warningMessages[0]}`
@@ -507,8 +512,10 @@ async function loadEpubDocument(file: File): Promise<ReaderDocumentLoadResult> {
         continue;
       }
 
+      const sanitizedHtml = await sanitizeReaderHtml(loaded.html);
+
       chapters.push({
-        html: sanitizeReaderHtml(loaded.html),
+        html: sanitizedHtml,
         id: item.id,
         title: labelMap.get(item.id) ?? `Secao ${index + 1}`,
       });
@@ -578,8 +585,10 @@ async function loadFb2Document(file: File): Promise<ReaderDocumentLoadResult> {
         continue;
       }
 
+      const sanitizedHtml = await sanitizeReaderHtml(loaded.html);
+
       chapters.push({
-        html: sanitizeReaderHtml(loaded.html),
+        html: sanitizedHtml,
         id: item.id,
         title: labelMap.get(item.id) ?? `Secao ${index + 1}`,
       });
@@ -653,8 +662,10 @@ async function loadMobiFamilyDocument(
         continue;
       }
 
+      const sanitizedHtml = await sanitizeReaderHtml(loaded.html);
+
       chapters.push({
-        html: sanitizeReaderHtml(loaded.html),
+        html: sanitizedHtml,
         id: item.id,
         title: labelMap.get(item.id) ?? `Secao ${index + 1}`,
       });

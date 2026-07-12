@@ -10,16 +10,13 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { pdfjs } from "react-pdf";
 import {
-  createSamplePdfDocument,
   describeDocumentForChip,
   extractEditableText,
   getDocumentFormatLabel,
   loadReaderDocument,
   replaceHtmlDocumentText,
   SUPPORTED_DOCUMENT_ACCEPT,
-  SUPPORTED_DOCUMENT_SUMMARY,
   type ReaderDocument,
   type ReaderTocEntry,
 } from "@/lib/local-reader-documents";
@@ -32,8 +29,6 @@ import {
   type LookupLanguage,
 } from "@/lib/lookup-language";
 import {
-  clearReaderSessionFile,
-  clearReaderSessionState,
   loadReaderSessionFile,
   loadReaderSessionState,
   saveReaderSessionFile,
@@ -100,11 +95,8 @@ import {
 } from "./reader/notes-export";
 import { NotesPanel } from "./reader/notes-panel";
 import { ReaderDocumentView } from "./reader/reader-document-view";
-import { ReaderSidebar } from "./reader/reader-sidebar";
 import { ReaderToolbar } from "./reader/reader-toolbar";
 import styles from "./pdf-reader-app.module.css";
-
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 const THEME_STORAGE_KEY = "pdf-reader-theme";
 const NOTES_STORAGE_KEY = "mathesis-reader-notes";
@@ -257,35 +249,6 @@ function scrollToPdfPage(stage: HTMLElement | null, pageNumber: number | null | 
   pageSlot?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function getNearestVisiblePdfPage(stage: HTMLElement | null) {
-  if (!stage) {
-    return null;
-  }
-
-  const stageRect = stage.getBoundingClientRect();
-  const targetY = stageRect.top + 96;
-  let bestPage: number | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (const slot of stage.querySelectorAll<HTMLElement>("[data-pdf-page-number]")) {
-    const rawPage = Number(slot.dataset.pdfPageNumber);
-
-    if (!Number.isFinite(rawPage)) {
-      continue;
-    }
-
-    const rect = slot.getBoundingClientRect();
-    const distance = Math.abs(rect.top - targetY);
-
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestPage = rawPage;
-    }
-  }
-
-  return bestPage;
-}
-
 export default function PdfReaderApp() {
   const [documentState, setDocumentState] = useState<ReaderDocument | null>(null);
   const [documentLoadingLabel, setDocumentLoadingLabel] = useState<string | null>(null);
@@ -340,8 +303,6 @@ export default function PdfReaderApp() {
   function setSourceSearchLoading(updater: SourceSearchUpdater<SourceSearchLoadingState>) {
     dispatchSourceSearch({ type: "loading", updater });
   }
-  const [restoringSession, setRestoringSession] = useState(true);
-
   const cacheRef = useRef<Map<string, LookupPayload>>(new Map());
   const documentDisposeRef = useRef<(() => void) | null>(null);
   const documentRequestRef = useRef(0);
@@ -606,29 +567,6 @@ export default function PdfReaderApp() {
         setViewerError(message);
       });
     }
-  }
-
-  function loadSamplePdf() {
-    documentRequestRef.current += 1;
-    releaseLoadedDocument();
-    loadedFileRef.current = null;
-    restorePositionRef.current = null;
-    hasAppliedRestorePositionRef.current = false;
-
-    startTransition(() => {
-      pendingLookupRef.current?.abort();
-      setDocumentLoadingLabel(null);
-      setDocumentState(createSamplePdfDocument());
-      setIsTocOpen(false);
-      setNumPages(0);
-      setTooltip(null);
-      setViewerError(null);
-      setDocumentEditorValue("");
-      setIsDocumentEditing(false);
-    });
-
-    void clearReaderSessionFile();
-    void clearReaderSessionState();
   }
 
   function syncTooltipNavigation(payload: LookupPayload) {
@@ -1041,27 +979,48 @@ export default function PdfReaderApp() {
     }
 
     didAttemptSessionRestoreRef.current = true;
+    let cancelled = false;
 
-    void (async () => {
-      try {
-        const [savedFile, savedState] = await Promise.all([
-          loadReaderSessionFile(),
-          loadReaderSessionState(),
-        ]);
+    const restoreSession = () => {
+      void (async () => {
+        const savedState = await loadReaderSessionState();
+
+        if (cancelled) {
+          return;
+        }
 
         if (savedState?.position) {
           restorePositionRef.current = savedState.position;
         }
 
         restoreEditedTextRef.current = savedState?.editedText ?? null;
+        const savedFile = await loadReaderSessionFile();
 
-        if (savedFile) {
-          await ingestFile(savedFile, { restoreFromSession: true });
+        if (cancelled || !savedFile) {
+          return;
         }
-      } finally {
-        setRestoringSession(false);
-      }
-    })();
+
+        await ingestFile(savedFile, { restoreFromSession: true });
+      })();
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(restoreSession, {
+        timeout: 1200,
+      });
+
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback?.(idleId);
+      };
+    }
+
+    const timeoutId = globalThis.setTimeout(restoreSession, 120);
+
+    return () => {
+      cancelled = true;
+      globalThis.clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -1087,7 +1046,12 @@ export default function PdfReaderApp() {
 
       hasAppliedRestorePositionRef.current = true;
       window.requestAnimationFrame(() => {
-        scrollToPdfPage(stage, nextPosition.kind === "pdf" ? nextPosition.pageNumber : 1);
+        if (nextPosition.kind === "pdf") {
+          stage.scrollTop = nextPosition.scrollTop;
+          return;
+        }
+
+        scrollToPdfPage(stage, 1);
       });
       return;
     }
@@ -1123,18 +1087,8 @@ export default function PdfReaderApp() {
         ticking = false;
         lastPersistedAt = window.performance.now();
 
-        if (documentState.kind === "pdf") {
-          const pageNumber = getNearestVisiblePdfPage(stage);
-
-          if (pageNumber) {
-            queuePersistReaderState({ kind: "pdf", pageNumber });
-          }
-
-          return;
-        }
-
         queuePersistReaderState({
-          kind: "html",
+          kind: documentState.kind,
           scrollTop: stage.scrollTop,
         });
       });
@@ -1144,7 +1098,7 @@ export default function PdfReaderApp() {
     return () => {
       stage.removeEventListener("scroll", onScroll);
     };
-  }, [documentState, documentEditorValue]);
+  }, [documentState]);
 
   useEffect(() => {
     if (!documentState || documentState.kind !== "html") {
@@ -1170,7 +1124,7 @@ export default function PdfReaderApp() {
 
     const resizeObserver = new ResizeObserver((entries) => {
       const baseWidth = Math.floor(entries[0].contentRect.width - 52);
-      setPageWidth(Math.max(300, Math.min(1120, baseWidth)));
+      setPageWidth(Math.max(320, Math.min(1320, baseWidth)));
     });
 
     resizeObserver.observe(stage);
@@ -2522,17 +2476,6 @@ export default function PdfReaderApp() {
       />
 
       <div className={`${styles.frame} ${isExpanded ? styles.frameExpanded : ""}`}>
-        {!isExpanded ? (
-          <ReaderSidebar
-            accept={SUPPORTED_DOCUMENT_ACCEPT}
-            isDragging={isDragging}
-            onDragStateChange={setIsDragging}
-            onFileSelected={ingestFile}
-            onLoadSamplePdf={loadSamplePdf}
-            supportedDocumentSummary={SUPPORTED_DOCUMENT_SUMMARY}
-          />
-        ) : null}
-
         <div
           className={`${styles.viewerShell} ${
             isExpanded ? styles.viewerShellExpanded : ""
@@ -2567,7 +2510,6 @@ export default function PdfReaderApp() {
             }}
             onToggleToc={() => setIsTocOpen((current) => !current)}
             pageWidth={pageWidth}
-            restoringSession={restoringSession}
             viewerError={viewerError}
             viewerSurfaceRef={viewerSurfaceRef}
           />
