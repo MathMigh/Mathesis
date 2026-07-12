@@ -357,6 +357,8 @@ export default function PdfReaderApp() {
                 scrollTop: viewerSurfaceRef.current?.scrollTop ?? 0,
               }
             : null),
+      }).catch(() => {
+        // Session persistence is best-effort and should never delay the reader.
       });
     }, 180);
   }
@@ -535,7 +537,6 @@ export default function PdfReaderApp() {
       }
 
       loadedFileRef.current = nextFile;
-      await saveReaderSessionFile(nextFile);
       const nextDocument =
         options?.restoreFromSession && restoreEditedTextRef.current && result.document.kind === "html"
           ? replaceHtmlDocumentText(result.document, restoreEditedTextRef.current)
@@ -549,6 +550,9 @@ export default function PdfReaderApp() {
           nextDocument.kind === "html" ? extractEditableText(nextDocument) ?? "" : "",
         );
         setIsDocumentEditing(false);
+      });
+      void saveReaderSessionFile(nextFile).catch(() => {
+        // File persistence is best-effort and should never block opening the document.
       });
       restoreEditedTextRef.current = null;
     } catch (error) {
@@ -983,7 +987,13 @@ export default function PdfReaderApp() {
 
     const restoreSession = () => {
       void (async () => {
-        const savedState = await loadReaderSessionState();
+        let savedState = null;
+
+        try {
+          savedState = await loadReaderSessionState();
+        } catch {
+          savedState = null;
+        }
 
         if (cancelled) {
           return;
@@ -994,7 +1004,13 @@ export default function PdfReaderApp() {
         }
 
         restoreEditedTextRef.current = savedState?.editedText ?? null;
-        const savedFile = await loadReaderSessionFile();
+        let savedFile: File | null = null;
+
+        try {
+          savedFile = await loadReaderSessionFile();
+        } catch {
+          savedFile = null;
+        }
 
         if (cancelled || !savedFile) {
           return;

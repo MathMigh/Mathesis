@@ -17,6 +17,7 @@ const DB_NAME = "mathesis-reader-session";
 const STORE_NAME = "session";
 const FILE_KEY = "current-file";
 const STATE_KEY = "current-state";
+const STATE_STORAGE_KEY = "mathesis-reader-state";
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -80,6 +81,10 @@ async function deleteValue(key: string) {
       resolve();
     };
   });
+}
+
+function canUseLocalStorage() {
+  return typeof window !== "undefined" && "localStorage" in window;
 }
 
 function normalizeReaderSessionPosition(
@@ -161,28 +166,82 @@ export async function clearReaderSessionFile() {
 }
 
 export async function loadReaderSessionState() {
+  if (canUseLocalStorage()) {
+    try {
+      const rawState = window.localStorage.getItem(STATE_STORAGE_KEY);
+
+      if (rawState) {
+        return normalizeReaderSessionState(
+          JSON.parse(rawState) as ReaderSessionState | null,
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(STATE_STORAGE_KEY);
+    }
+  }
+
   if (typeof window === "undefined" || !("indexedDB" in window)) {
     return null;
   }
 
-  const state = await readValue<ReaderSessionState>(STATE_KEY);
-  return normalizeReaderSessionState(state);
+  try {
+    const state = normalizeReaderSessionState(
+      await readValue<ReaderSessionState>(STATE_KEY),
+    );
+
+    if (state && canUseLocalStorage()) {
+      window.localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
+    }
+
+    return state;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveReaderSessionState(state: ReaderSessionState) {
+  const normalizedState = normalizeReaderSessionState(state);
+
+  if (canUseLocalStorage()) {
+    try {
+      if (!normalizedState) {
+        window.localStorage.removeItem(STATE_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(
+          STATE_STORAGE_KEY,
+          JSON.stringify(normalizedState),
+        );
+      }
+    } catch {
+      // Ignore local storage quota errors; session persistence is best-effort.
+    }
+  }
+
   if (typeof window === "undefined" || !("indexedDB" in window)) {
     return;
   }
 
-  await writeValue(STATE_KEY, state);
+  try {
+    await writeValue(STATE_KEY, normalizedState);
+  } catch {
+    // Ignore IndexedDB write failures here; the live reader should not stall.
+  }
 }
 
 export async function clearReaderSessionState() {
+  if (canUseLocalStorage()) {
+    window.localStorage.removeItem(STATE_STORAGE_KEY);
+  }
+
   if (typeof window === "undefined" || !("indexedDB" in window)) {
     return;
   }
 
-  await deleteValue(STATE_KEY);
+  try {
+    await deleteValue(STATE_KEY);
+  } catch {
+    // Ignore cleanup failures.
+  }
 }
 
 export type { ReaderSessionPosition, ReaderSessionState };
