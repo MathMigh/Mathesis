@@ -2519,7 +2519,10 @@ export default function PdfReaderApp() {
             onPdfItemClick={(pageNumber) =>
               scrollToPdfPage(viewerSurfaceRef.current, pageNumber)
             }
-            onPdfLoadError={setViewerError}
+            onPdfLoadError={(message) => {
+              setNumPages(0);
+              setViewerError(message);
+            }}
             onPdfLoadSuccess={(pageCount) => {
               setNumPages(pageCount);
               setViewerError(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { type RefObject } from "react";
 import { Document, pdfjs } from "react-pdf";
 
 import type { ReaderDocument } from "@/lib/local-reader-documents";
@@ -29,15 +29,15 @@ export function PdfDocumentStage({
   onPdfLoadSuccess,
   viewerSurfaceRef,
 }: PdfDocumentStageProps) {
-  useEffect(() => {
-    return () => {
-      onPdfLoadSuccess(0);
-    };
-  }, [onPdfLoadSuccess]);
+  const documentKey =
+    typeof documentState.file === "string"
+      ? documentState.file
+      : `${documentState.label}:${documentState.file.lastModified}:${documentState.file.size}`;
 
   return (
     <div className={styles.documentArea}>
       <Document
+        key={documentKey}
         error={
           <div className={styles.viewerError}>
             <div>
