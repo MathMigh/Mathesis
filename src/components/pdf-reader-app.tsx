@@ -20,6 +20,7 @@ import {
   type ReaderDocument,
   type ReaderTocEntry,
 } from "@/lib/local-reader-documents";
+import { readExternalLookupRequest } from "@/lib/external-lookup";
 import {
   createLoadingSource,
   createUnavailableSource,
@@ -340,6 +341,7 @@ export default function PdfReaderApp() {
   const hasAppliedRestorePositionRef = useRef(false);
   const didAttemptSessionRestoreRef = useRef(false);
   const restoreEditedTextRef = useRef<string | null>(null);
+  const externalLookupHandledRef = useRef(false);
 
   function queuePersistReaderState(position?: ReaderSessionPosition | null) {
     if (persistReaderStateTimeoutRef.current) {
@@ -874,6 +876,88 @@ export default function PdfReaderApp() {
       await resolveLookupInternal(word, anchor, selectionContextText);
     },
   );
+
+  const openExternalLookup = useEffectEvent((word: string, language: LookupLanguage | null) => {
+    const normalized = normalizeWordSelection(word);
+
+    if (normalized.kind !== "word") {
+      return;
+    }
+
+    const resolvedLanguage =
+      language ?? detectLookupLanguage(normalized.word, { documentLanguage: documentState?.meta.language });
+    const payload = getDisplayPayload(buildManualEmptyPayload(resolvedLanguage));
+    const { floatingWidth, maxHeight, viewportPadding } = getTooltipMetrics();
+    const width = Math.min(window.innerWidth - viewportPadding * 2, floatingWidth);
+    const x = clampValue(
+      window.innerWidth / 2 - width / 2,
+      viewportPadding,
+      window.innerWidth - viewportPadding - width,
+    );
+    const y = clampValue(
+      window.innerHeight * 0.16,
+      viewportPadding,
+      window.innerHeight - viewportPadding - maxHeight,
+    );
+    const anchorRect = {
+      bottom: y + 44,
+      height: 44,
+      left: x,
+      right: x + width,
+      top: y,
+      width,
+    };
+
+    setManualLookupLanguage(resolvedLanguage);
+    setManualLookupWord(normalized.word);
+    setActiveSourceId(null);
+    resetSourceSearchState();
+    syncTooltipNavigation(payload);
+
+    const layout = lastTooltipLayoutRef.current?.manualPosition
+      ? { ...lastTooltipLayoutRef.current, anchorRect }
+      : {
+          anchorRect,
+          manualPosition: true as const,
+          maxHeight,
+          placement: "right" as const,
+          width,
+          x,
+          y,
+        };
+
+    setTooltip({
+      ...layout,
+      contextOverrides: { documentLanguage: resolvedLanguage },
+      manualPosition: true,
+      payload,
+      status: "loading",
+      word: normalized.word,
+    });
+    void resolveLookupInternal(
+      normalized.word,
+      layout,
+      undefined,
+      { documentLanguage: resolvedLanguage },
+    );
+  });
+
+  useEffect(() => {
+    if (externalLookupHandledRef.current) {
+      return;
+    }
+
+    const request = readExternalLookupRequest(window.location.search);
+    if (!request) {
+      return;
+    }
+
+    externalLookupHandledRef.current = true;
+    window.requestAnimationFrame(() => {
+      openExternalLookup(request.word, request.language);
+    });
+    window.history.replaceState(null, document.title, `${window.location.pathname}${window.location.hash}`);
+  }, []);
 
   const selectionTargetsDocumentContent = useEffectEvent((selection: Selection) => {
     if (!documentState || selection.rangeCount === 0) {

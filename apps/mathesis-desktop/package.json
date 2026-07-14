@@ -1,0 +1,25 @@
+{
+  "name": "mathesis-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Companion Windows do Mathesis.",
+  "author": "Mathesis",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "electron .",
+    "package:win": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "br.com.mathesis.companion",
+    "productName": "Mathesis",
+    "asar": true,
+    "files": ["main.cjs", "preload.cjs", "package.json"],
+    "win": {
+      "target": ["portable"]
+    }
+  }
+}

@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "work/**",
     "tmp/**",
     "node_modules/**",
+    "apps/mathesis-desktop/**",
     "public/pdf.worker.min.mjs",
     "public/validation/**",
     "next-env.d.ts",

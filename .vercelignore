@@ -1,8 +1,16 @@
 .next/
 node_modules/
+apps/mathesis-desktop/node_modules/
+apps/mathesis-desktop/dist/
+apps/mathesis-desktop/*.log
+.git/
+.vscode/
 work/
+tmp/
+outputs/
 .env*
 *.log
+*.tsbuildinfo
 data/portuguese-corpus-sample/
 data/portuguese-corpus-smoke/
 data/portuguese-corpus/corpus.json
