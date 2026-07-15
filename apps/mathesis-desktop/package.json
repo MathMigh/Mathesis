@@ -1,7 +1,7 @@
 {
   "name": "mathesis-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Companion Windows do Mathesis.",
   "author": "Mathesis",
   "main": "main.cjs",

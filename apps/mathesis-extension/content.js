@@ -1,7 +1,6 @@
-const BUTTON_ID = "mathesis-selection-action";
 const MAX_WORD_LENGTH = 120;
-
-let selectedWord = "";
+let lastSentWord = "";
+let lastSentAt = 0;
 
 function normalizeLanguage(language) {
   const value = (language || "").toLocaleLowerCase();
@@ -14,69 +13,52 @@ function normalizeLanguage(language) {
 }
 
 function readSelectedWord() {
-  const value = window.getSelection()?.toString().normalize("NFC").trim() ?? "";
+  const selection = window.getSelection();
+  const value = selection?.toString().normalize("NFC").trim() ?? "";
 
-  if (!value || value.length > MAX_WORD_LENGTH || /[\r\n]/u.test(value)) {
+  if (!selection || selection.isCollapsed || !value || value.length > MAX_WORD_LENGTH || /[\r\n]/u.test(value)) {
     return "";
   }
 
   return value;
 }
 
-function removeAction() {
-  document.getElementById(BUTTON_ID)?.remove();
+function selectionLooksLexical(word) {
+  return /^[\p{L}\p{M}'\u2019.-]+$/u.test(word) && /\p{L}/u.test(word);
 }
 
-function showAction(word, x, y) {
-  removeAction();
-  selectedWord = word;
+function sendLookup(word) {
+  const now = Date.now();
+  const key = word.toLocaleLowerCase();
 
-  const button = document.createElement("button");
-  button.id = BUTTON_ID;
-  button.type = "button";
-  button.textContent = "Mathesis";
-  button.setAttribute("aria-label", `Consultar ${word} no Mathesis`);
-  Object.assign(button.style, {
-    background: "#2d2119",
-    border: "1px solid rgba(255,255,255,.45)",
-    borderRadius: "999px",
-    boxShadow: "0 8px 22px rgba(0,0,0,.25)",
-    color: "#fffaf2",
-    cursor: "pointer",
-    fontFamily: "Georgia, serif",
-    fontSize: "13px",
-    left: `${Math.max(8, x)}px`,
-    padding: "7px 12px",
-    position: "fixed",
-    top: `${Math.max(8, y + 10)}px`,
-    zIndex: "2147483647",
-  });
-  button.addEventListener("mousedown", (event) => event.preventDefault());
-  button.addEventListener("click", () => {
-    chrome.runtime.sendMessage({
-      language: normalizeLanguage(document.documentElement.lang),
-      type: "MATHESIS_OPEN_LOOKUP",
-      word: selectedWord,
-    });
-    removeAction();
-  });
+  if (key === lastSentWord && now - lastSentAt < 1200) {
+    return;
+  }
 
-  document.documentElement.append(button);
+  lastSentWord = key;
+  lastSentAt = now;
+
+  chrome.runtime.sendMessage({
+    language: normalizeLanguage(document.documentElement.lang),
+    type: "MATHESIS_OPEN_LOOKUP",
+    word
+  });
 }
 
-document.addEventListener("mouseup", (event) => {
-  window.setTimeout(() => {
-    const word = readSelectedWord();
-    if (!word) {
-      removeAction();
-      return;
-    }
+function handleSelection() {
+  const word = readSelectedWord();
+  if (!word || !selectionLooksLexical(word)) {
+    return;
+  }
 
-    showAction(word, event.clientX, event.clientY);
-  }, 0);
+  sendLookup(word);
+}
+
+document.addEventListener("selectionchange", () => {
+  window.clearTimeout(handleSelection.timer);
+  handleSelection.timer = window.setTimeout(handleSelection, 250);
 });
 
-document.addEventListener("scroll", removeAction, true);
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") removeAction();
+document.addEventListener("mouseup", () => {
+  window.setTimeout(handleSelection, 0);
 });

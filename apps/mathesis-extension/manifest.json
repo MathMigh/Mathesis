@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mathesis",
-  "version": "0.1.0",
-  "description": "Consulta o painel do Mathesis a partir de uma palavra selecionada em qualquer pagina.",
+  "version": "0.1.1",
+  "description": "Consulta o Mathesis automaticamente a partir de uma palavra selecionada.",
   "permissions": ["windows"],
   "host_permissions": ["<all_urls>"],
   "background": {

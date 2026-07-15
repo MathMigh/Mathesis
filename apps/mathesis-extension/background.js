@@ -1,4 +1,7 @@
 const MATHESIS_ORIGIN = "https://mathesis-app.vercel.app";
+const MAX_WORD_LENGTH = 120;
+let lastLookupKey = "";
+let lastLookupAt = 0;
 
 function normalizeLanguage(language) {
   if (language === "english" || language === "latin" || language === "portuguese") {
@@ -20,13 +23,26 @@ function buildLookupUrl(word, language) {
   return url.toString();
 }
 
+function shouldOpen(word) {
+  const key = word.toLocaleLowerCase();
+  const now = Date.now();
+
+  if (key === lastLookupKey && now - lastLookupAt < 1200) {
+    return false;
+  }
+
+  lastLookupKey = key;
+  lastLookupAt = now;
+  return true;
+}
+
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type !== "MATHESIS_OPEN_LOOKUP" || typeof message.word !== "string") {
     return;
   }
 
   const word = message.word.normalize("NFC").trim();
-  if (!word || word.length > 120) {
+  if (!word || word.length > MAX_WORD_LENGTH || /[\r\n]/u.test(word) || !shouldOpen(word)) {
     return;
   }
 
@@ -35,6 +51,6 @@ chrome.runtime.onMessage.addListener((message) => {
     height: 900,
     type: "popup",
     url: buildLookupUrl(word, message.language),
-    width: 920,
+    width: 920
   });
 });

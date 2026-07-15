@@ -2,7 +2,11 @@ const { app, BrowserWindow, clipboard, globalShortcut, screen } = require("elect
 
 const MATHESIS_ORIGIN = "https://mathesis-app.vercel.app";
 const LOOKUP_SHORTCUT = "CommandOrControl+Shift+M";
+const MAX_WORD_LENGTH = 120;
+const CLIPBOARD_POLL_INTERVAL_MS = 650;
 let lookupWindow = null;
+let lastOpenedWord = "";
+let lastClipboardValue = "";
 
 function buildLookupUrl(word) {
   const url = new URL(MATHESIS_ORIGIN);
@@ -10,10 +14,10 @@ function buildLookupUrl(word) {
   return url.toString();
 }
 
-function getClipboardLookup() {
+function readClipboardWord() {
   const value = clipboard.readText().normalize("NFC").trim();
 
-  if (!value || value.length > 120 || /[\r\n]/u.test(value)) {
+  if (!value || value.length > MAX_WORD_LENGTH || /[\r\n]/u.test(value)) {
     return null;
   }
 
@@ -29,8 +33,12 @@ function isMathesisUrl(rawUrl) {
 }
 
 function openLookup() {
-  const word = getClipboardLookup();
+  const word = readClipboardWord();
   if (!word) return;
+
+  const key = word.toLocaleLowerCase();
+  if (key === lastOpenedWord) return;
+  lastOpenedWord = key;
 
   const cursor = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(cursor).workArea;
@@ -43,20 +51,19 @@ function openLookup() {
     lookupWindow = new BrowserWindow({
       backgroundColor: "#f8f2e8",
       height,
-      icon: undefined,
       minHeight: 480,
       minWidth: 520,
       show: false,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true,
         preload: `${__dirname}/preload.cjs`,
-        webSecurity: true,
+        sandbox: true,
+        webSecurity: true
       },
       width,
       x,
-      y,
+      y
     });
 
     lookupWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -71,8 +78,20 @@ function openLookup() {
   lookupWindow.focus();
 }
 
+function watchClipboard() {
+  const word = readClipboardWord();
+  if (!word || word === lastClipboardValue) {
+    return;
+  }
+
+  lastClipboardValue = word;
+  openLookup();
+}
+
 app.whenReady().then(() => {
   globalShortcut.register(LOOKUP_SHORTCUT, openLookup);
+  lastClipboardValue = clipboard.readText().normalize("NFC").trim();
+  setInterval(watchClipboard, CLIPBOARD_POLL_INTERVAL_MS);
   app.on("activate", openLookup);
 });
 

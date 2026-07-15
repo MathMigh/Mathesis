@@ -1,21 +1,25 @@
 .page {
-  min-height: 100vh;
-  padding: clamp(12px, 2vw, 24px);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1vw, 14px);
+  padding: clamp(8px, 1.6vw, 22px);
 }
 
 .brandBar {
   width: min(1720px, 100%);
-  margin: 0 auto 14px;
+  margin: 0 auto;
   display: grid;
   place-items: center;
   text-align: center;
+  min-height: 44px;
 }
 
 .brandBar h1 {
   font-family: var(--font-literata), serif;
-  font-size: clamp(2.05rem, 3vw, 3.15rem);
+  font-size: clamp(1.8rem, 2.8vw, 3.15rem);
   font-weight: 700;
-  line-height: 0.95;
+  line-height: 0.96;
   letter-spacing: -0.06em;
   color: var(--ink-strong);
 }
@@ -23,10 +27,28 @@
 .shell {
   width: min(1720px, 100%);
   margin: 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.shell > * {
+  width: 100%;
+  min-height: 0;
 }
 
 @media (max-width: 720px) {
+  .page {
+    gap: 6px;
+    padding: 6px;
+  }
+
   .brandBar {
-    margin-bottom: 10px;
+    min-height: 36px;
+  }
+
+  .brandBar h1 {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    letter-spacing: -0.05em;
   }
 }
